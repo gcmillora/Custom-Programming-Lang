@@ -1,0 +1,76 @@
+from tkinter import Frame, Text, Scrollbar
+from math import ceil, floor
+
+
+# Console/Terminal frame that contains status, compile, and runtime execution display
+class Console(Frame):
+    def __init__(self, parent):
+        # Set window size based on parent widget size
+        self._window_config = (int(parent.winfo_reqwidth() * 0.8),
+                               int(parent.winfo_reqheight() * 0.2))
+
+        self.color_config = {
+            "bg": "#37474F",
+            "fg": "#ECEFF1"
+        }
+
+        Frame.__init__(self,
+                       width=self._window_config[0],
+                       height=self._window_config[1],
+                       master=parent,
+                       background=self.color_config["bg"])
+        self.grid(column=0, row=1)
+        self.grid_propagate(False)  # Locks the size of the frame to set width and height
+        self.update_idletasks()  # Make sure the info about the frame is updated
+
+        self._text_config = (floor((190 * self.winfo_reqwidth()) / 1230),
+                             ceil((14 * self.winfo_reqheight()) / 147))
+
+        self.console_area = Text(self,
+                                 state="disabled",
+                                 width=self._text_config[0],
+                                 height=self._text_config[1],
+                                 background=self.color_config["bg"],
+                                 foreground=self.color_config["fg"],
+                                 insertbackground=self.color_config["fg"],
+                                 wrap="word")
+        self.console_area.pack(side="left", fill="both", expand=True)
+        # Set the color of errors in the console to red
+        self.console_area.tag_config("error", foreground="red")
+
+        # Set the scroll bar for the console/terminal
+        self.scrollbar = Scrollbar(self, orient="vertical")
+        self.scrollbar.pack(side="right", fill="y")
+
+        self.console_area.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.console_area.yview)
+
+    # Triggered when specific variables are changed in the StateManager
+    # Specifically, this method handles any text to be displayed in the console
+    def notify(self, states):
+        # states.console_display is the temporary storage for any text to be displayed in the console
+        if states.console_display is None:  # If the console_display is empty then skip
+            return
+
+        self.console_print(states.console_display)
+        states.console_display = None  # Return console_display to NoneType
+
+    # Writes the status and results to the text widget
+    def console_print(self, text: str | list[str]):
+        # Temporarily removes the disabled state to allow text to be inserted
+        self.console_area.config(state="normal")
+
+        # Check if the text is string
+        if type(text) is str:
+            # Check if the text to be display is an error or info
+            # If it is an error change the text color to red
+            log_type = text.split(":")[0].lower()
+            self.console_area.insert("end", f"{text}\n", log_type)
+        else:
+            # If the text is a list of strings then write them one by one to the text widget
+            for line in text:
+                log_type = line.split(":")[0].lower()
+                self.console_area.insert("end", f"{line}\n", log_type)
+
+        # Return the state to disabled to disallow the user to modify the console log
+        self.console_area.config(state="disabled")
