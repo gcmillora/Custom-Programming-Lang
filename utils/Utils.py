@@ -70,6 +70,7 @@ def compile_file(lines: list[str]):
             elif word.isnumeric():
                 tokens.append((word, "INT_LIT", idx))
             elif word[0].isalpha() and word.isalnum():
+                tokens.append((word, "IDENT", idx))
                 variables.append((word, "IDENT", idx))
             else:
                 tokens.append((word, "ERR_LEX", idx))
