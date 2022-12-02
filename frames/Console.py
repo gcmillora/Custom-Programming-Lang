@@ -1,25 +1,24 @@
-from tkinter import Frame, Text, Scrollbar
+from tkinter import LabelFrame, Text, Scrollbar
 from math import ceil, floor
 
 
 # Console/Terminal frame that contains status, compile, and runtime execution display
-class Console(Frame):
-    def __init__(self, parent):
+class Console(LabelFrame):
+    def __init__(self, parent, color_config):
         # Set window size based on parent widget size
         self._window_config = (int(parent.winfo_reqwidth() * 0.8),
-                               int(parent.winfo_reqheight() * 0.2))
+                               int(parent.winfo_reqheight() * 0.17))
 
-        self.color_config = {
-            "bg": "#37474F",
-            "fg": "#ECEFF1"
-        }
+        self.color_config = color_config
 
-        Frame.__init__(self,
-                       width=self._window_config[0],
-                       height=self._window_config[1],
-                       master=parent,
-                       background=self.color_config["bg"])
-        self.grid(column=0, row=1)
+        LabelFrame.__init__(self,
+                            master=parent,
+                            text="Terminal",
+                            width=self._window_config[0],
+                            height=self._window_config[1],
+                            background=self.color_config["alt_bg"],
+                            foreground=self.color_config["fg"])
+        self.grid(column=0, row=1, sticky="ns")
         self.grid_propagate(False)  # Locks the size of the frame to set width and height
         self.update_idletasks()  # Make sure the info about the frame is updated
 
@@ -30,7 +29,7 @@ class Console(Frame):
                                  state="disabled",
                                  width=self._text_config[0],
                                  height=self._text_config[1],
-                                 background=self.color_config["bg"],
+                                 background=self.color_config["alt_bg"],
                                  foreground=self.color_config["fg"],
                                  insertbackground=self.color_config["fg"],
                                  wrap="word")

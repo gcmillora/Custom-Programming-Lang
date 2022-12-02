@@ -21,3 +21,17 @@ class EmptyFileReturnError(Exception):
         if is_dialog_closed:
             self.is_dialog_closed = True
         self.message = "Cannot perform action since current file is empty"
+
+
+# Errors due to invalid prod file
+class InvalidProdFileError(Exception):
+    def __init__(self, filename: str, line: int):
+        Exception.__init__(self)
+        self.message = f"Production file: {filename}.prod has an error in line {line}"
+
+
+# Errors due to invalid prod file
+class InvalidParseTableError(Exception):
+    def __init__(self, filename: str, line: int):
+        Exception.__init__(self)
+        self.message = f"Rule file: {filename}.prod has an error in line {line}"

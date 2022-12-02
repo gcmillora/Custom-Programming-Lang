@@ -1,23 +1,41 @@
 from tkinter import filedialog, messagebox
 from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError
+from typing import Literal
+
+__FileTypes = Literal["iol", "prod", "ptbl"]
 
 
-# Open local iol file
-def open_filedialog():
+# Open local files
+def open_file(file_type: __FileTypes | list[__FileTypes] | None,
+              title: str = "Select File"):
     try:
+        filetypes_to_ask = []
+        if file_type is None:
+            filetypes_to_ask.append(("All file types", "*.*"))
+        else:
+            if type(file_type) != list:
+                file_type = [file_type]
+
+            for curr_file_type in file_type:
+                if curr_file_type == "iol":
+                    filetypes_to_ask.append(("Integer-Oriented Language File", "*.iol"))
+                if curr_file_type == "prod":
+                    filetypes_to_ask.append(("Production File", "*.prod"))
+                if curr_file_type == "ptbl":
+                    filetypes_to_ask.append(("Parse Table File", "*.ptbl"))
+
         # Open folder via filedialog
-        filename: filedialog = filedialog.askopenfilename(title='Select File',
-                                                          filetypes=(
-                                                              ("Integer-Oriented Language File", "*.iol"),))
+        filename: filedialog = filedialog.askopenfilename(title=title,
+                                                          filetypes=(*filetypes_to_ask,))
 
         # Dialog was closed
         if not filename:
             raise EmptyFileReturnError(is_dialog_closed=True)
 
         # Open file and get the content inside
-        with open(f"{filename}", "r") as iol:
+        with open(f"{filename}", "r") as file:
             try:
-                return iol.read().splitlines(), filename
+                return file.read().splitlines(), filename
             except IndexError:
                 raise
 
@@ -76,6 +94,18 @@ def write_to_file(file_path, current_text):
         file.writelines(f"{line} \n" for line in current_text)
 
 
+# Write tokens to tkn file
+def write_to_tkn_file(filename, tokens):
+    # Create file_path for tokens
+    filename = filename.split('.')[0]
+    file_path = f"./_out/{filename}.tkn"
+
+    # Convert list/array of tuple to list/array of strings
+    new_token_list: list[str] = [",".join(map(str, token_row)) for token_row in tokens]
+
+    write_to_file(file_path, new_token_list)
+
+
 # Check if the contents of the iol file is valid
 def is_iol_valid(lines: list[str]) -> bool:
     iol_found = False
@@ -112,7 +142,7 @@ def is_iol_valid(lines: list[str]) -> bool:
 
 
 # Formats the text to be displayed to the console
-def print_to_console(text: str | list[str], log_type: str = "info"):
+def print_to_console(text: str | list[str], log_type: Literal["info", "error", "success"] = "info"):
     log_type = log_type.upper()
     if type(text) is list:
         final_disp = []
@@ -123,3 +153,56 @@ def print_to_console(text: str | list[str], log_type: str = "info"):
     else:
         # Add log type to the start of the string to the status
         return f"{log_type}: {text}"
+
+
+# Get tokenized code
+def get_tokens_from_file(filename: str):
+    try:
+        # Open file_path for tokens
+        filename = filename.split('.')[0]
+        file_path = f"./_out/{filename}.tkn"
+
+        with open(file_path, "r") as token_file:
+            return [tuple(lines.strip().split(",")) for lines in token_file]
+    except FileNotFoundError:
+        return None
+
+
+# Get all set shortcuts
+def get_shortcuts(get_all=True, get_ordered=False):
+    global_shortcuts = {
+        "Compile": {
+            "tk_key": "<Control-p>",
+            "desc": "Compile the code on the code editor.",
+            "key": "Ctrl + P",
+        },
+        "Show Tokenized Code": {
+            "tk_key": "<Control-t>",
+            "desc": "Show the tokenized code in a window.",
+            "key": "Ctrl + T",
+        },
+        "Save": {
+            "tk_key": "<Control-s>",
+            "desc": "Save the file to the current or new file.",
+            "key": "Ctrl + S",
+        },
+        "Save as": {
+            "tk_key": "<Control-Shift-s>",
+            "desc": "Save the file to a new file format.",
+            "key": "Ctrl + Shift + S",
+        },
+    }
+
+    local_shortcuts = {
+        "Tab Options": {
+            "tk_key": "<Button-3>",
+            "desc": "Right click the tab name to open the menu to close the tab.",
+            "key": "Right Click (MB3)",
+        },
+    }
+
+    if get_ordered:
+        return {"global": global_shortcuts, "local": local_shortcuts}
+
+    if get_all:
+        return {**global_shortcuts, **local_shortcuts}

@@ -1,4 +1,4 @@
-from frames.VarTable import VarTable
+from frames.VarTableContainer import VarTableContainer
 from frames.Console import Console
 
 
@@ -6,7 +6,7 @@ from frames.Console import Console
 # to the specified variables
 class Subject:
     def __init__(self):
-        self._observers: list[VarTable | Console] = []
+        self._observers: list[VarTableContainer | Console] = []
 
     def notify(self, modifier=None):
         # Calls the notify method of subscribed observers
@@ -28,11 +28,24 @@ class StateManager(Subject):
         # Tracks the current tab in focus
         self.__current_tab: int | None = None
 
-        # Collects the list variables to be displayed in each variable table of all tabs
+        # Collects the list of variables to be displayed in each variable tables of all tabs
         self.__var_tables: list = []
+
+        # Collects the list of production values to be displayed in each prod tables of all tabs
+        self.__prod_tables: list = []
+
+        # Collects the list of parse table values to be displayed in each parse tables of all tabs
+        self.__parse_tables: list = []
 
         # Intermediate variable that contains the values to be displayed in the console
         self.__console_display: str | list[str] | None = None
+
+        # Color configuration of the program
+        self.color_config = {
+            "bg": "#37474F",
+            "fg": "#ECEFF1",
+            "alt_bg": "#22223b"
+        }
 
     @property
     def current_tab(self):
@@ -41,6 +54,14 @@ class StateManager(Subject):
     @property
     def var_tables(self):
         return self.__var_tables
+
+    @property
+    def prod_tables(self):
+        return self.__prod_tables
+
+    @property
+    def parse_tables(self):
+        return self.__parse_tables
 
     @property
     def console_display(self):
@@ -73,6 +94,44 @@ class StateManager(Subject):
         # Notifies observers for changes
         self.notify()
 
+    # Sets the variables for the var table in the current tab
+    @prod_tables.setter
+    def prod_tables(self, data):
+        idx = self.__current_tab
+
+        # If the values are redundant, then skip
+        if data in self.__prod_tables:
+            return
+
+        # If there are no code editor tabs, then skip
+        if idx is None:
+            return
+
+        # Set the values to the prod table in the current tab
+        self.__prod_tables[idx] = data
+
+        # Notifies observers for changes
+        self.notify()
+
+    # Sets the variables for the var table in the current tab
+    @parse_tables.setter
+    def parse_tables(self, data):
+        idx = self.__current_tab
+
+        # If the values are redundant, then skip
+        if data in self.__parse_tables:
+            return
+
+        # If there are no code editor tabs, then skip
+        if idx is None:
+            return
+
+        # Set the values to the parse table in the current tab
+        self.__parse_tables[idx] = data
+
+        # Notifies observers for changes
+        self.notify()
+
     # Updates the current text to be displayed in the console window
     @console_display.setter
     def console_display(self, data):
@@ -81,13 +140,17 @@ class StateManager(Subject):
         # Notifies observers for changes
         self.notify()
 
-    # Assign an empty list of variables for the new tab
-    def init_var_table(self):
+    # Assign an empty list of tables for the new tab
+    def init_tables(self):
         self.__var_tables.append([])
+        self.__prod_tables.append([])
+        self.__parse_tables.append([])
 
     # Update variables when a tab was removed
     def remove_tab(self):
         idx = self.__current_tab
         self.__console_display = None
         self.__var_tables.pop(idx)
+        self.__prod_tables.pop(idx)
+        self.__parse_tables.pop(idx)
         self.__current_tab = None
