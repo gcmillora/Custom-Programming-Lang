@@ -3,7 +3,7 @@ from tkinter.ttk import Treeview
 from utils.Utils import open_file, write_to_file
 from compiler.processes import check_and_clean_prod, check_and_clean_parse
 from utils.CustomErrors import InvalidProdFileError, InvalidParseTableError
-from compiler.processes import syntax_analysis
+from compiler.processes import parsing
 from copy import deepcopy
 
 
@@ -197,9 +197,9 @@ class ParsingField(Frame):
 
     def parse_values(self):
         try:
-            result = syntax_analysis(self.prod_table,
-                                     self.parse_table,
-                                     self.text_box.get(1.0, 'end').strip().split(' '))
+            result = parsing(self.prod_table,
+                             self.parse_table,
+                             self.text_box.get(1.0, 'end').strip().split(' '))
             result = result.splitlines()
 
             self.clear_table()

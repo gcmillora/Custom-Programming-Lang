@@ -1,41 +1,6 @@
 from utils.CustomErrors import InvalidLexemeError, InvalidProdFileError, InvalidParseTableError
 
-
-def lexical_analysis(lines: list[str]):
-    tokens = []
-    variables = []
-    errors = []
-    keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO", "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
-
-    # TODO: Add comments
-    for idx, line in enumerate(lines, start=1):
-        lexemes = line.split(" ")
-        if line == "":
-            continue
-        if line == "IOL" or line == "LOI":
-            continue
-        for word in lexemes:
-            if word in keywords:
-                tokens.append((word, word, idx))
-            elif word.isnumeric():
-                tokens.append((word, "INT_LIT", idx))
-            elif word[0].isalpha() and word.isalnum():
-                variables.append((word, "IDENT", idx))
-            else:
-                tokens.append((word, "ERR_LEX", idx))
-                errors.append((word, idx))
-
-    # If errors were found then return the error list only
-    if len(errors) > 1:
-        raise InvalidLexemeError(errors)
-
-    return {
-        "tokens": tokens,
-        "vars": variables,
-    }
-
-
-def syntax_analysis(prod_table: list, parse_table: list, input_buffer: list):
+def parsing(prod_table: list, parse_table: list, input_buffer: list):
     # Non-recursive predictive parsing
     rules = []
 
@@ -180,3 +145,67 @@ def check_and_clean_parse(lines: list, filename):
 
     except IndexError:
         raise InvalidParseTableError(filename, curr_idx)
+
+
+def syntax_analysis(token_list):
+    for ctr in range(len(token_list)):
+        if ctr == 0:
+            current_token = token_list[ctr]
+            continue
+        current_token = token_list[ctr]
+        previous_token = token_list[ctr-1]
+        if current_token[1] in ["INT", "STR"]:
+            next_token = token_list[ctr+1]
+            ctr += 1
+            if next_token[1] != "IDENT":
+                return False, token_list[ctr]
+            continue
+        elif current_token[1] == "IS":
+            if previous_token[1] == "IDENT":
+                next_token = token_list[ctr+1]
+                ctr += 1
+                if next_token[1] not in ["INT_LIT", "IDENT"]:
+                    data = is_expr(token_list, ctr)
+                    print(data)
+                    ctr = data[1]
+                    err = data[0]
+                    if not err:
+                        return False, token_list[ctr]
+                continue
+        elif current_token[1] == "PRINT":
+            next_token = token_list[ctr+1]
+            ctr += 1
+            if next_token[1] not in ["IDENT", "INT_LIT"]:
+                err, ctr = is_expr(token_list, ctr)
+                if not err:
+                    return False, token_list[ctr]
+            continue
+        elif current_token[1] == "NEWLN":
+            continue
+        elif current_token[1] == "BEG":
+            next_token = token_list[ctr+1]
+            ctr += 1
+            if next_token[1] != "IDENT":
+                return False, token_list[ctr]
+            continue
+    return True, "OK"
+
+
+def is_expr(token_list, ctr):
+    current_token = token_list[ctr]
+    if current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+        ctr += 1
+        return is_expr(token_list, ctr)
+    elif current_token[1] in ["INT_LIT", "IDENT"]:
+        next_token = token_list[ctr+1]
+        ctr += 1
+        if next_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+            ctr += 1
+            return is_expr(token_list, ctr)
+        elif next_token[1] in ["INT_LIT", "IDENT"]:
+            return True, ctr
+        return True, ctr
+    else:
+        print(token_list[ctr])
+        return False, ctr
+

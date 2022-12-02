@@ -28,32 +28,29 @@ for num in range(0, len(lines)):
 errors = [i for i, v in enumerate(tokens) if v[1] == "ERR_LEX"]
 
 
-def syntax_analysis(token_list, var_list):
+def syntax_analysis(token_list):
     print(token_list[35])
-    currentToken = ''
-    previousToken = ''
-    err = False
     for ctr in range(len(token_list)):
         if ctr == 0:
-            currentToken = token_list[ctr]
+            current_token = token_list[ctr]
             continue
-        currentToken = token_list[ctr]
-        previousToken = token_list[ctr-1]
-        if currentToken[1] in ["INT", "STR"]:
-            nextToken = token_list[ctr+1]
+        current_token = token_list[ctr]
+        previous_token = token_list[ctr-1]
+        if current_token[1] in ["INT", "STR"]:
+            next_token = token_list[ctr+1]
             ctr += 1
-            if nextToken[1] != "IDENT":
+            if next_token[1] != "IDENT":
                 print(token_list[ctr])
                 print(ctr)
                 return False
-            valid_variables.append(nextToken)
+            valid_variables.append(next_token)
             continue
-        elif currentToken[1] == "IS":
-            if previousToken[1] == "IDENT":
-                nextToken = token_list[ctr+1]
+        elif current_token[1] == "IS":
+            if previous_token[1] == "IDENT":
+                next_token = token_list[ctr+1]
                 ctr += 1
-                if nextToken[1] not in ["INT_LIT", "IDENT"]:
-                    data = isExpr(token_list, ctr)
+                if next_token[1] not in ["INT_LIT", "IDENT"]:
+                    data = is_expr(token_list, ctr)
                     print(data)
                     ctr = data[1]
                     err = data[0]
@@ -62,22 +59,22 @@ def syntax_analysis(token_list, var_list):
                         print(ctr)
                         return False
                 continue
-        elif currentToken[1] == "PRINT":
-            nextToken = token_list[ctr+1]
+        elif current_token[1] == "PRINT":
+            next_token = token_list[ctr+1]
             ctr += 1
-            if nextToken[1] not in ["IDENT", "INT_LIT"]:
-                err, ctr = isExpr(token_list, ctr)
+            if next_token[1] not in ["IDENT", "INT_LIT"]:
+                err, ctr = is_expr(token_list, ctr)
                 if not err:
                     print(token_list[ctr])
                     print(ctr)
                     return False
             continue
-        elif currentToken[1] == "NEWLN":
+        elif current_token[1] == "NEWLN":
             continue
-        elif currentToken[1] == "BEG":
-            nextToken = token_list[ctr+1]
+        elif current_token[1] == "BEG":
+            next_token = token_list[ctr+1]
             ctr += 1
-            if nextToken[1] != "IDENT":
+            if next_token[1] != "IDENT":
                 print(token_list[ctr])
                 print(ctr)
                 return False
@@ -85,18 +82,18 @@ def syntax_analysis(token_list, var_list):
     return True
 
 
-def isExpr(token_list, ctr):
-    currentToken = token_list[ctr]
-    if currentToken[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+def is_expr(token_list, ctr):
+    current_token = token_list[ctr]
+    if current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
         ctr += 1
-        return isExpr(token_list, ctr)
-    elif currentToken[1] in ["INT_LIT", "IDENT"]:
-        nextToken = token_list[ctr+1]
+        return is_expr(token_list, ctr)
+    elif current_token[1] in ["INT_LIT", "IDENT"]:
+        next_token = token_list[ctr+1]
         ctr += 1
-        if nextToken[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+        if next_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
             ctr += 1
-            return isExpr(token_list, ctr)
-        elif nextToken[1] in ["INT_LIT", "IDENT"]:
+            return is_expr(token_list, ctr)
+        elif next_token[1] in ["INT_LIT", "IDENT"]:
             return True, ctr
         return True, ctr
     else:
@@ -104,7 +101,7 @@ def isExpr(token_list, ctr):
         return False, ctr
 
 
-print(syntax_analysis(tokens, variables))
+print(syntax_analysis(tokens))
 
 
 for error in errors:

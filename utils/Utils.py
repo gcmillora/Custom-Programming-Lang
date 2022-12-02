@@ -1,6 +1,7 @@
 from tkinter import filedialog, messagebox
-from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError
+from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError
 from typing import Literal
+from compiler.processes import syntax_analysis
 
 __FileTypes = Literal["iol", "prod", "ptbl"]
 
@@ -50,41 +51,43 @@ def open_file_prompt():
 
 # Compile the file and return the tokens and variables
 def compile_file(lines: list[str]):
-    try:
-        tokens = []
-        variables = []
-        errors = []
-        keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO", "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
+    tokens = []
+    variables = []
+    errors = []
+    keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO",
+                "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
 
-        # TODO: Add comments
-        for idx, line in enumerate(lines, start=1):
-            lexemes = line.split(" ")
-            if line == "":
-                continue
-            if line == "IOL" or line == "LOI":
-                continue
-            for word in lexemes:
-                if word in keywords:
-                    tokens.append((word, word, idx))
-                elif word.isnumeric():
-                    tokens.append((word, "INT_LIT", idx))
-                elif word[0].isalpha() and word.isalnum():
-                    variables.append((word, "IDENT", idx))
-                else:
-                    tokens.append((word, "ERR_LEX", idx))
-                    errors.append((word, idx))
+    # TODO: Add comments
+    for idx, line in enumerate(lines, start=1):
+        lexemes = line.split(" ")
+        if line == "":
+            continue
+        if line == "IOL" or line == "LOI":
+            continue
+        for word in lexemes:
+            if word in keywords:
+                tokens.append((word, word, idx))
+            elif word.isnumeric():
+                tokens.append((word, "INT_LIT", idx))
+            elif word[0].isalpha() and word.isalnum():
+                variables.append((word, "IDENT", idx))
+            else:
+                tokens.append((word, "ERR_LEX", idx))
+                errors.append((word, idx))
 
-        # If errors were found then return the error list only
-        if len(errors) > 1:
-            raise InvalidLexemeError(errors)
+    # If errors were found then return the error list only
+    if len(errors) > 1:
+        raise InvalidLexemeError(errors)
 
-        return {
-            "tokens": tokens,
-            "vars": variables,
-        }
+    success, error_line = syntax_analysis(tokens)
+    print(error_line)
+    if not success:
+        raise InvalidSyntaxError(error_line)
 
-    except InvalidLexemeError:
-        raise
+    return {
+        "tokens": tokens,
+        "vars": variables,
+    }
 
 
 # Write text from code editor to iol file

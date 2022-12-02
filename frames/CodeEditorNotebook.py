@@ -2,7 +2,7 @@ from tkinter import Frame, Scrollbar, TclError, Menu, filedialog
 from tkinter.ttk import Notebook
 from utils.StateManager import StateManager
 import utils.Utils as utils
-from utils.CustomErrors import InvalidIOLFileError, InvalidLexemeError, EmptyFileReturnError
+from utils.CustomErrors import InvalidIOLFileError, InvalidLexemeError, EmptyFileReturnError, InvalidSyntaxError
 from frames.DisplayTokens import DisplayTokens
 from custom_widgets.CustomTextBox import TextLineNumbers, CustomTextWidget
 from frames.SyntaxAnalysisWindow import SyntaxAnalysisWindow
@@ -256,6 +256,11 @@ class CodeEditorNotebook(Notebook):
         except InvalidLexemeError as err:
             if hasattr(err, "error_list"):
                 self.states.console_display = utils.print_to_console(err.error_list, "error")
+
+        # Throws when there is a syntax error then displays all the errors to the console
+        except InvalidSyntaxError as err:
+            if hasattr(err, "error"):
+                self.states.console_display = utils.print_to_console(err.error, "error")
 
         # Throws when chosen file does not exist
         except FileNotFoundError:
