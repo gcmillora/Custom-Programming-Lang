@@ -1,12 +1,12 @@
 IOL
 INT num IS 0 INT res IS 0
-INT 5num IS 4 INT a_67b IS 69
+INT num4 IS 4 INT b IS 69
 STR msg1 STR msg2 STR msg3
 BEG msg1 BEG msg2
 BEG msg3
 NEWLN PRINT msg1
 NEWLN
-INTO res IS MULT num num
+INTO res IS MULT 2 num
 PRINT msg2
 PRINT MULT num 2
 NEWLN

@@ -11,10 +11,18 @@ class InvalidLexemeError(Exception):
         Exception.__init__(self)
         self.error_list = []
         for error in errors:
-            self.error_list.append(f"Invalid token '{error[0]}' in line {error[1]}")
+            self.error_list.append(
+                f"Invalid token '{error[0]}' in line {error[1]}")
 
+
+class InvalidSyntaxError(Exception):
+    def __init__(self, error: any):
+        Exception.__init__(self)
+        self.error = f"SYNTAX ERROR: '{error[0]}' in line {error[1]}"
 
 # Errors due to invalid actions when the code editor is empty
+
+
 class EmptyFileReturnError(Exception):
     def __init__(self, is_dialog_closed=None):
         Exception.__init__(self)

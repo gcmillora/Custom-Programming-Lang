@@ -1,5 +1,5 @@
 from tkinter import filedialog, messagebox
-from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError
+from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError
 
 
 # Open local iol file
@@ -30,13 +30,90 @@ def open_file_prompt():
     return messagebox.askyesno("Open existing file", "Do you want to open file in new tab?")
 
 
+def syntax_analysis(token_list, var_list):
+    print(token_list[35])
+    currentToken = ''
+    previousToken = ''
+    err = False
+    for ctr in range(len(token_list)):
+        if ctr == 0:
+            currentToken = token_list[ctr]
+            continue
+        currentToken = token_list[ctr]
+        previousToken = token_list[ctr-1]
+        if currentToken[1] in ["INT", "STR"]:
+            nextToken = token_list[ctr+1]
+            ctr += 1
+            if nextToken[1] != "IDENT":
+                print(token_list[ctr])
+                print(ctr)
+                return False, token_list[ctr]
+            continue
+        elif currentToken[1] == "IS":
+            if previousToken[1] == "IDENT":
+                nextToken = token_list[ctr+1]
+                ctr += 1
+                if nextToken[1] not in ["INT_LIT", "IDENT"]:
+                    data = isExpr(token_list, ctr)
+                    print(data)
+                    ctr = data[1]
+                    err = data[0]
+                    if not err:
+                        print(token_list[ctr])
+                        print(ctr)
+                        return False, token_list[ctr]
+                continue
+        elif currentToken[1] == "PRINT":
+            nextToken = token_list[ctr+1]
+            ctr += 1
+            if nextToken[1] not in ["IDENT", "INT_LIT"]:
+                err, ctr = isExpr(token_list, ctr)
+                if not err:
+                    print(token_list[ctr])
+                    print(ctr)
+                    return False, token_list[ctr]
+            continue
+        elif currentToken[1] == "NEWLN":
+            continue
+        elif currentToken[1] == "BEG":
+            nextToken = token_list[ctr+1]
+            ctr += 1
+            if nextToken[1] != "IDENT":
+                print(token_list[ctr])
+                print(ctr)
+                return False, token_list[ctr]
+            continue
+    return True, "OK"
+
+
+def isExpr(token_list, ctr):
+    currentToken = token_list[ctr]
+    if currentToken[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+        ctr += 1
+        return isExpr(token_list, ctr)
+    elif currentToken[1] in ["INT_LIT", "IDENT"]:
+        nextToken = token_list[ctr+1]
+        ctr += 1
+        if nextToken[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+            ctr += 1
+            return isExpr(token_list, ctr)
+        elif nextToken[1] in ["INT_LIT", "IDENT"]:
+            return True, ctr
+        return True, ctr
+    else:
+        print(token_list[ctr])
+        return False, ctr
+
 # Compile the file and return the tokens and variables
+
+
 def compile_file(lines: list[str]):
     try:
         tokens = []
         variables = []
         errors = []
-        keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO", "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
+        keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO",
+                    "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
 
         # TODO: Add comments
         for idx, line in enumerate(lines, start=1):
@@ -60,6 +137,9 @@ def compile_file(lines: list[str]):
         if len(errors) > 1:
             raise InvalidLexemeError(errors)
 
+        err, case = syntax_analysis(tokens, variables)
+        if not err:
+            raise InvalidSyntaxError(case)
         return {
             "tokens": tokens,
             "vars": variables,
