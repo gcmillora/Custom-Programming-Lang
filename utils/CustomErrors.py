@@ -14,6 +14,12 @@ class InvalidLexemeError(Exception):
             self.error_list.append(f"Invalid token '{error[0]}' in line {error[1]}")
 
 
+class InvalidSyntaxError(Exception):
+    def __init__(self, error: any):
+        Exception.__init__(self)
+        self.error = f"SYNTAX ERROR: '{error[0]}' in line {error[2]}"
+
+
 # Errors due to invalid actions when the code editor is empty
 class EmptyFileReturnError(Exception):
     def __init__(self, is_dialog_closed=None):
@@ -21,3 +27,17 @@ class EmptyFileReturnError(Exception):
         if is_dialog_closed:
             self.is_dialog_closed = True
         self.message = "Cannot perform action since current file is empty"
+
+
+# Errors due to invalid prod file
+class InvalidProdFileError(Exception):
+    def __init__(self, filename: str, line: int):
+        Exception.__init__(self)
+        self.message = f"Production file: {filename}.prod has an error in line {line}"
+
+
+# Errors due to invalid prod file
+class InvalidParseTableError(Exception):
+    def __init__(self, filename: str, line: int):
+        Exception.__init__(self)
+        self.message = f"Rule file: {filename}.prod has an error in line {line}"
