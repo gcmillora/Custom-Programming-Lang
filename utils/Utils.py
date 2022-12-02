@@ -140,6 +140,7 @@ def compile_file(lines: list[str]):
         err, case = syntax_analysis(tokens, variables)
         if not err:
             raise InvalidSyntaxError(case)
+
         return {
             "tokens": tokens,
             "vars": variables,
