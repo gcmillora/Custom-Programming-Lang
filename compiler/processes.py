@@ -1,5 +1,6 @@
 from utils.CustomErrors import InvalidLexemeError, InvalidProdFileError, InvalidParseTableError
 
+
 def parsing(prod_table: list, parse_table: list, input_buffer: list):
     # Non-recursive predictive parsing
     rules = []
@@ -148,37 +149,77 @@ def check_and_clean_parse(lines: list, filename):
 
 
 def syntax_analysis(token_list):
+    err_list = []
+    valid_variables = []
     for ctr in range(len(token_list)):
-        if ctr == 0:
-            current_token = token_list[ctr]
-            continue
         current_token = token_list[ctr]
-        previous_token = token_list[ctr-1]
         if current_token[1] in ["INT", "STR"]:
             next_token = token_list[ctr+1]
             ctr += 1
             if next_token[1] != "IDENT":
-                return False, token_list[ctr]
+                err_list.append(
+                    "ERROR: Line", next_token[1], "is not an identifier")
+                continue
+            valid_variables.append(next_token)
             continue
         elif current_token[1] == "IS":
+            previous_token = token_list[ctr-1]
             if previous_token[1] == "IDENT":
                 next_token = token_list[ctr+1]
+                if next_token[1] == "IDENT":
+                    exist = False
+                    for var in valid_variables:
+                        if next_token[0] == var[0]:
+                            exist = True
+                            break
+                    if not exist:
+                        err_list.append(
+                            f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
+                        continue
                 ctr += 1
                 if next_token[1] not in ["INT_LIT", "IDENT"]:
-                    data = is_expr(token_list, ctr)
-                    print(data)
+                    data = is_expr(token_list, ctr, err_list, valid_variables)
                     ctr = data[1]
                     err = data[0]
+                    err_list = data[2]
                     if not err:
-                        return False, token_list[ctr]
+                        err_list.append(
+                            f"ERROR: Invalid expression at line {token_list[ctr]}")
+                        continue
+
+                if(next_token[2] != current_token[2]):
+                    print(
+                        f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
+                    err_list.append(
+                        f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
+                    continue
                 continue
         elif current_token[1] == "PRINT":
             next_token = token_list[ctr+1]
             ctr += 1
             if next_token[1] not in ["IDENT", "INT_LIT"]:
-                err, ctr = is_expr(token_list, ctr)
+                err, ctr, err_list = is_expr(
+                    token_list, ctr, err_list, valid_variables)
                 if not err:
-                    return False, token_list[ctr]
+                    err_list.append(
+                        f"ERROR: Invalid expression at line {token_list[ctr]}")
+                    continue
+            if next_token[1] == "IDENT":
+                exist = False
+                for var in valid_variables:
+                    if next_token[0] == var[0]:
+                        exist = True
+                        break
+                if not exist:
+                    print(token_list[ctr], "not in", valid_variables)
+                    err_list.append(
+                        f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
+                    continue
+            if(next_token[2] != current_token[2]):
+                print("ERROR: No next token at line", current_token[2])
+                err_list.append(
+                    f"ERROR: No next token at line {current_token[2]}")
+                continue
             continue
         elif current_token[1] == "NEWLN":
             continue
@@ -186,26 +227,67 @@ def syntax_analysis(token_list):
             next_token = token_list[ctr+1]
             ctr += 1
             if next_token[1] != "IDENT":
-                return False, token_list[ctr]
+                err_list.append(
+                    f"ERROR: Line {next_token[2]} is not an identifier")
+                continue
+            if next_token[1] == "IDENT":
+                exist = False
+                for var in valid_variables:
+                    if next_token[0] == var[0]:
+                        exist = True
+                        break
+                if not exist:
+                    print(token_list[ctr], "not in", valid_variables)
+                    err_list.append(
+                        f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
+                    continue
+            if(next_token[2] != current_token[2]):
+                print("ERROR: No next token at line", current_token[2])
+                err_list.append(
+                    f"ERROR: No next token at line {current_token[2]}")
+                continue
             continue
-    return True, "OK"
+    return err_list
 
 
-def is_expr(token_list, ctr):
+def is_expr(token_list, ctr, err_list=[], valid_variables=[]):
     current_token = token_list[ctr]
     if current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
         ctr += 1
-        return is_expr(token_list, ctr)
+        return is_expr(token_list, ctr, err_list, valid_variables)
     elif current_token[1] in ["INT_LIT", "IDENT"]:
+        if current_token[1] == "IDENT":
+            exist = False
+            for var in valid_variables:
+                print(var)
+                if current_token[0] == var[0]:
+                    exist = True
+                    break
+            if not exist:
+                print(token_list[ctr], "not in", valid_variables)
+                err_list.append(
+                    f"ERROR: At Line {current_token[2]}, {current_token[0]} is not defined")
+                return False, ctr, err_list
         next_token = token_list[ctr+1]
         ctr += 1
         if next_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
             ctr += 1
-            return is_expr(token_list, ctr)
+            if(next_token[2] != current_token[2]):
+                print("ERROR: No next token at line", current_token[2])
+                err_list.append(
+                    f"ERROR: No next token at line {current_token[2]}")
+                return False, ctr, err_list
+            return is_expr(token_list, ctr, err_list, valid_variables)
         elif next_token[1] in ["INT_LIT", "IDENT"]:
-            return True, ctr
-        return True, ctr
+            if(next_token[2] != current_token[2]):
+                print("ERROR: No next token at line", current_token[2])
+                err_list.append(
+                    f"ERROR: No next token at line {current_token[2]}")
+                return False, ctr, err_list
+            return True, ctr, err_list
+        return True, ctr, err_list
     else:
-        print(token_list[ctr])
-        return False, ctr
-
+        print("ERROR: Invalid expression at line", current_token[2])
+        err_list.append(
+            f"ERROR: Invalid expression at line {current_token[2]}")
+        return False, ctr, err_list
