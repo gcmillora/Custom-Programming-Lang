@@ -8,10 +8,10 @@ keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO",
             "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
 
 for num in range(0, len(lines)):
-    if(lines[0] == "IOL" and lines[-1] == "LOI"):
+    if lines[0] == "IOL" and lines[-1] == "LOI":
         lexemes = lines[num].split(" ")
         for word in lexemes:
-            if (word != "IOL" and word != "LOI"):
+            if word != "IOL" and word != "LOI":
                 if word in keywords:
                     tokens.append((word, word, num+1))
                 elif word.isnumeric():
@@ -37,8 +37,7 @@ def syntax_analysis(token_list):
             next_token = token_list[ctr+1]
             ctr += 1
             if next_token[1] != "IDENT":
-                err_list.append(
-                    "ERROR: Line", next_token[1], "is not an identifier")
+                err_list.append(f"ERROR: Line {next_token[1]} is not an identifier")
                 continue
             valid_variables.append(next_token)
             continue
@@ -53,8 +52,7 @@ def syntax_analysis(token_list):
                             exist = True
                             break
                     if not exist:
-                        err_list.append(
-                            f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
+                        err_list.append(f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
                         continue
                 ctr += 1
                 if next_token[1] not in ["INT_LIT", "IDENT"]:
@@ -63,11 +61,10 @@ def syntax_analysis(token_list):
                     err = data[0]
                     err_list = data[2]
                     if not err:
-                        err_list.append(
-                            f"ERROR: Invalid expression at line {token_list[ctr]}")
+                        err_list.append(f"ERROR: Invalid expression at line {token_list[ctr]}")
                         continue
 
-                if(next_token[2] != current_token[2]):
+                if next_token[2] != current_token[2]:
                     print(
                         f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
                     err_list.append(
@@ -95,7 +92,7 @@ def syntax_analysis(token_list):
                     err_list.append(
                         f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
                     continue
-            if(next_token[2] != current_token[2]):
+            if next_token[2] != current_token[2]:
                 print("ERROR: No next token at line", current_token[2])
                 err_list.append(
                     f"ERROR: No next token at line {current_token[2]}")
@@ -121,7 +118,7 @@ def syntax_analysis(token_list):
                     err_list.append(
                         f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
                     continue
-            if(next_token[2] != current_token[2]):
+            if next_token[2] != current_token[2]:
                 print("ERROR: No next token at line", current_token[2])
                 err_list.append(
                     f"ERROR: No next token at line {current_token[2]}")

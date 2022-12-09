@@ -15,9 +15,9 @@ class InvalidLexemeError(Exception):
 
 
 class InvalidSyntaxError(Exception):
-    def __init__(self, error: any):
+    def __init__(self, errors: list):
         Exception.__init__(self)
-        self.error = f"SYNTAX ERROR: '{error[0]}' in line {error[2]}"
+        self.error_list = [error for error in errors]
 
 
 # Errors due to invalid actions when the code editor is empty

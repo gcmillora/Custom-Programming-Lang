@@ -77,13 +77,12 @@ def compile_file(lines: list[str]):
                 errors.append((word, idx))
 
     # If errors were found then return the error list only
-    if len(errors) > 1:
+    if len(errors) > 0:
         raise InvalidLexemeError(errors)
 
-    success, error_line = syntax_analysis(tokens)
-    print(error_line)
-    if not success:
-        raise InvalidSyntaxError(error_line)
+    error_list = syntax_analysis(tokens)
+    if error_list:
+        raise InvalidSyntaxError(error_list)
 
     return {
         "tokens": tokens,

@@ -259,8 +259,8 @@ class CodeEditorNotebook(Notebook):
 
         # Throws when there is a syntax error then displays all the errors to the console
         except InvalidSyntaxError as err:
-            if hasattr(err, "error"):
-                self.states.console_display = utils.print_to_console(err.error, "error")
+            if hasattr(err, "error_list"):
+                self.states.console_display = utils.print_to_console(err.error_list, "error")
 
         # Throws when chosen file does not exist
         except FileNotFoundError:
