@@ -1,5 +1,6 @@
 from frames.VarTableContainer import VarTableContainer
 from frames.Console import Console
+from custom_widgets.BegWindow import BegWindow
 
 
 # Custom class that follows the observer pattern to notify subscribed classes for any changes connected
@@ -40,6 +41,9 @@ class StateManager(Subject):
         # Intermediate variable that contains the values to be displayed in the console
         self.__console_display: str | list[str] | None = None
 
+        # Temporary cache for the input value
+        self.__user_input: str | None = None
+
         # Color configuration of the program
         self.color_config = {
             "bg": "#37474F",
@@ -66,6 +70,13 @@ class StateManager(Subject):
     @property
     def console_display(self):
         return self.__console_display
+
+    # Clears the current cached value after fetching it
+    @property
+    def user_input(self):
+        temp = self.__user_input
+        self.__user_input = None
+        return temp
 
     # Sets the index of the current tab
     @current_tab.setter
@@ -140,6 +151,10 @@ class StateManager(Subject):
         # Notifies observers for changes
         self.notify()
 
+    # Update the current user input cache
+    def __update_user_input(self, user_input):
+        self.__user_input = user_input
+
     # Assign an empty list of tables for the new tab
     def init_tables(self):
         self.__var_tables.append([])
@@ -154,3 +169,9 @@ class StateManager(Subject):
         self.__prod_tables.pop(idx)
         self.__parse_tables.pop(idx)
         self.__current_tab = None
+
+    # Opens a window to get user input
+    def beg_user(self, parent, label="Input Value"):
+        popup = BegWindow(parent, self.__update_user_input, label)
+        parent.wait_window(popup)
+        return self.user_input

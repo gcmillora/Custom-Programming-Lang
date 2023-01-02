@@ -41,3 +41,10 @@ class InvalidParseTableError(Exception):
     def __init__(self, filename: str, line: int):
         Exception.__init__(self)
         self.message = f"Rule file: {filename}.prod has an error in line {line}"
+
+
+# General errors on execution
+class ExecutionError(Exception):
+    def __init__(self, filename: str, message="Unknown error during execution."):
+        Exception.__init__(self)
+        self.message = f"Failed to execute {filename}, due to: '{message}'"

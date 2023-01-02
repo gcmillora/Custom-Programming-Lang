@@ -2,10 +2,16 @@ from tkinter import Frame, Scrollbar, TclError, Menu, filedialog
 from tkinter.ttk import Notebook
 from utils.StateManager import StateManager
 import utils.Utils as utils
-from utils.CustomErrors import InvalidIOLFileError, InvalidLexemeError, EmptyFileReturnError, InvalidSyntaxError
+from utils.CustomErrors import InvalidIOLFileError, \
+    InvalidLexemeError, \
+    EmptyFileReturnError, \
+    InvalidSyntaxError, \
+    ExecutionError
 from frames.DisplayTokens import DisplayTokens
 from custom_widgets.CustomTextBox import TextLineNumbers, CustomTextWidget
-from frames.SyntaxAnalysisWindow import SyntaxAnalysisWindow
+
+
+# from frames.SyntaxAnalysisWindow import SyntaxAnalysisWindow
 
 
 # Notebook that contains all tabs for the code editor
@@ -230,8 +236,12 @@ class CodeEditorNotebook(Notebook):
             # Save tokens to token file
             utils.write_to_tkn_file(filename, res['tokens'])
 
+            # Auto saves if the file exists
+            if curr_textbox.filename[:9] != "*New File":
+                self.save_file()
+
             # Perform Syntax Analysis
-            SyntaxAnalysisWindow(self)
+            # SyntaxAnalysisWindow(self)
 
             response = f"{filename} compiled with no errors found."
             self.states.console_display = utils.print_to_console(response)
@@ -285,6 +295,51 @@ class CodeEditorNotebook(Notebook):
 
     def get_values_from_window(self, values):
         self.states.console_display = utils.print_to_console(values)
+
+    # Execute Code
+    def execute_code(self, *_):
+        try:
+            # Check if there are no open tabs then skip
+            if self.states.current_tab is None:
+                raise EmptyFileReturnError()
+
+            # Get instance of current text box
+            current_textbox = self.textbox_list[self.states.current_tab]
+
+            # Check if current file is already compiled
+            if not current_textbox.is_compiled:
+                if current_textbox.filename == "" or current_textbox.filename is None:
+                    raise ExecutionError("current unsaved file", "Attempting to execute un-compiled code.")
+                else:
+                    raise ExecutionError(current_textbox.filename, "Attempting to execute un-compiled code.")
+
+            """
+            TODO: @Greg perform code execution here
+            Note: Greg pwede nimo i change ang second parameter sa beg_user() para i modify ang label
+            """
+
+            # TODO: Remove after testing
+            print(self.states.beg_user(self, "CUSTOM LABEL"))
+
+            response = f"{current_textbox.filename} executed with no errors found."
+            self.states.console_display = utils.print_to_console(response)
+
+            # Triggers an OS-dependent chime to notify the user the file successfully saved
+            self.bell()
+
+        # Throws when the user tries to execute an empty file
+        except EmptyFileReturnError as err:
+            if hasattr(err, "message"):
+                self.states.console_display = utils.print_to_console(err.message, "error")
+
+        # Throws when the user tries to execute an un-compiled file
+        except ExecutionError as err:
+            if hasattr(err, "message"):
+                self.states.console_display = utils.print_to_console(err.message, "error")
+
+    def compile_and_execute(self, *_):
+        self.compile_file()
+        self.execute_code()
 
 
 # Container for the textbox
@@ -413,17 +468,20 @@ class CodeEditorTextBox(Frame):
 
     # Check and modify the content of the textbox to be compilable
     def get_compilable_text(self):
-        try:
-            # Get the list of text by line
-            current_text = self.textarea.get(1.0, "end").splitlines()
+        # Get the list of text by line
+        current_text = self.textarea.get(1.0, "end").splitlines()
 
-            # Check if the format of the IOL is valid
-            if not utils.is_iol_valid(current_text):
-                raise InvalidIOLFileError("The syntax of the file is invalid.")
+        print(current_text)
 
-            # Remove the whitespace before and after each line
-            current_text = [line.strip() for line in current_text]
+        # Check if the current text box is empty
+        if current_text is None or current_text == [] or current_text == ['']:
+            raise EmptyFileReturnError()
 
-            return current_text
-        except InvalidIOLFileError:
-            raise
+        # Check if the format of the IOL is valid
+        if not utils.is_iol_valid(current_text):
+            raise InvalidIOLFileError("The syntax of the file is invalid.")
+
+        # Remove the whitespace before and after each line
+        current_text = [line.strip() for line in current_text]
+
+        return current_text
