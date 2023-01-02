@@ -318,8 +318,9 @@ class CodeEditorNotebook(Notebook):
             Note: Greg pwede nimo i change ang second parameter sa beg_user() para i modify ang label
             """
 
-            # TODO: Remove after testing
-            print(self.states.beg_user(self, "CUSTOM LABEL"))
+            filename = current_textbox.filename
+            token_list = utils.get_tokens_from_file(filename)
+            utils.exec_code(token_list, self.states.beg_user, self)
 
             response = f"{current_textbox.filename} executed with no errors found."
             self.states.console_display = utils.print_to_console(response)

@@ -209,3 +209,10 @@ def get_shortcuts(get_all=True, get_ordered=False):
 
     if get_all:
         return {**global_shortcuts, **local_shortcuts}
+
+
+def exec_code(token_list, beg_user, parent):
+    for line in token_list:
+        if line[1] == "BEG":
+            result = beg_user(parent, "LABEL")
+            print(result)
