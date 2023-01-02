@@ -23,8 +23,8 @@ class TopMenu(Menu):
 
         # Execute code menu commands
         execute_menu = Menu(self, tearoff=0)
-        execute_menu.add_command(label="Run/Execute Code")
-        execute_menu.add_command(label="Compile and Run Code")
+        execute_menu.add_command(label="Run/Execute Code", command=code_editor.execute_code)
+        execute_menu.add_command(label="Compile and Run Code", command=code_editor.compile_and_execute)
         self.add_cascade(label="Execute", menu=execute_menu)
 
         # Help menu commands
