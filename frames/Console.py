@@ -13,7 +13,7 @@ class Console(LabelFrame):
 
         LabelFrame.__init__(self,
                             master=parent,
-                            text="Terminal",
+                            text="Console",
                             width=self._window_config[0],
                             height=self._window_config[1],
                             background=self.color_config["alt_bg"],
@@ -36,6 +36,7 @@ class Console(LabelFrame):
         self.console_area.pack(side="left", fill="both", expand=True)
         # Set the color of errors in the console to red
         self.console_area.tag_config("error", foreground="red")
+        self.console_area.tag_config("success", foreground="green")
 
         # Set the scroll bar for the console/terminal
         self.scrollbar = Scrollbar(self, orient="vertical")
@@ -47,6 +48,13 @@ class Console(LabelFrame):
     # Triggered when specific variables are changed in the StateManager
     # Specifically, this method handles any text to be displayed in the console
     def notify(self, states):
+        # Trigger to clear the console
+        if states.to_clear_console:
+            # Clear all text in the console
+            self.console_area.config(state="normal")
+            self.console_area.delete(1.0, 'end')
+            self.console_area.config(state="disabled")
+
         # states.console_display is the temporary storage for any text to be displayed in the console
         if states.console_display is None:  # If the console_display is empty then skip
             return
@@ -63,8 +71,11 @@ class Console(LabelFrame):
         if type(text) is str:
             # Check if the text to be display is an error or info
             # If it is an error change the text color to red
-            log_type = text.split(":")[0].lower()
-            self.console_area.insert("end", f"{text}\n", log_type)
+            format_text = text.split(":")
+            log_type = format_text[0]
+            user_text = format_text[1]
+            self.console_area.insert("end", f"{log_type}", log_type.lower())
+            self.console_area.insert("end", f":{user_text}\n")
         else:
             # If the text is a list of strings then write them one by one to the text widget
             for line in text:

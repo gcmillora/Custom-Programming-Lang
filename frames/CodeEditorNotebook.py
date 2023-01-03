@@ -6,12 +6,10 @@ from utils.CustomErrors import InvalidIOLFileError, \
     InvalidLexemeError, \
     EmptyFileReturnError, \
     InvalidSyntaxError, \
-    ExecutionError
+    ExecutionError, \
+    TypeMismatchError
 from frames.DisplayTokens import DisplayTokens
 from custom_widgets.CustomTextBox import TextLineNumbers, CustomTextWidget
-
-
-# from frames.SyntaxAnalysisWindow import SyntaxAnalysisWindow
 
 
 # Notebook that contains all tabs for the code editor
@@ -39,6 +37,10 @@ class CodeEditorNotebook(Notebook):
             tk_key = global_shortcuts[action]["tk_key"]
             if action == "Compile":
                 parent.bind(tk_key, self.compile_file)
+            elif action == "Execute":
+                parent.bind(tk_key, self.execute_code)
+            elif action == "Compile and Execute":
+                parent.bind(tk_key, self.compile_and_execute)
             elif action == "Show Tokenized Code":
                 parent.bind(tk_key, self.show_tokenized_code)
             elif action == "Save":
@@ -148,7 +150,8 @@ class CodeEditorNotebook(Notebook):
                 pass
             elif has_message:
                 pass
-            raise
+            else:
+                raise
 
     # Save the content of the current textbox to the opened file
     # If the content was not saved in a file yet, save to a new IOL file
@@ -244,7 +247,7 @@ class CodeEditorNotebook(Notebook):
             # SyntaxAnalysisWindow(self)
 
             response = f"{filename} compiled with no errors found."
-            self.states.console_display = utils.print_to_console(response)
+            self.states.console_display = utils.print_to_console(response, "success")
 
             # Triggers an OS-dependent chime to notify the user the file successfully saved
             self.bell()
@@ -308,24 +311,19 @@ class CodeEditorNotebook(Notebook):
 
             # Check if current file is already compiled
             if not current_textbox.is_compiled:
+
                 if current_textbox.filename == "" or current_textbox.filename is None:
                     raise ExecutionError("current unsaved file", "Attempting to execute un-compiled code.")
                 else:
                     raise ExecutionError(current_textbox.filename, "Attempting to execute un-compiled code.")
 
-            """
-            TODO: @Greg perform code execution here
-            Note: Greg pwede nimo i change ang second parameter sa beg_user() para i modify ang label
-            """
-
             filename = current_textbox.filename
             token_list = utils.get_tokens_from_file(filename)
-            output, error = (utils.exec_code(token_list, self.states.beg_user, self))
-            print(output)
-            print(error)
+            output = utils.exec_code(token_list, self.states.beg_user, self)
 
-            response = f"{current_textbox.filename} executed with no errors found."
-            self.states.console_display = utils.print_to_console(response)
+            response = f"{current_textbox.filename} executed with no errors found.\n-- OUTPUT --\n\n{output}\n\n" \
+                       f"------------ "
+            self.states.console_display = utils.print_to_console(response, "success")
 
             # Triggers an OS-dependent chime to notify the user the file successfully saved
             self.bell()
@@ -339,6 +337,15 @@ class CodeEditorNotebook(Notebook):
         except ExecutionError as err:
             if hasattr(err, "message"):
                 self.states.console_display = utils.print_to_console(err.message, "error")
+
+        # Throws when the user tries to input a value that does not match the expected type
+        except TypeMismatchError as err:
+            if hasattr(err, "message"):
+                self.states.console_display = utils.print_to_console(err.message, "error")
+
+        # Throws when the user tries divide by zeo
+        except ZeroDivisionError:
+            self.states.console_display = utils.print_to_console("Cannot divide by zero.", "error")
 
     def compile_and_execute(self, *_):
         self.compile_file()
@@ -392,66 +399,35 @@ class CodeEditorTextBox(Frame):
 
     # Handles the writing of the file content to the textbox
     def handle_text_on_open_file(self, dialog_res):
-        try:
-            lines, file_path = dialog_res
-            # Delete all the text in the textarea
-            self.textarea.delete(1.0, 'end')
+        lines, file_path = dialog_res
+        # Delete all the text in the textarea
+        self.textarea.delete(1.0, 'end')
 
-            self.path = file_path
-            self.filename = file_path.split("/")[-1]
+        self.path = file_path
+        self.filename = file_path.split("/")[-1]
 
-            # Insert text from IOL file to the textarea
-            for line in lines:
-                self.textarea.insert("end", f"{line}\n")
+        length = len(lines) - 1
 
-        except IndexError:
-            pass
+        # Insert text from IOL file to the textarea
+        for idx, line in enumerate(lines):
+            self.textarea.insert("end", f"{line}")
+            if idx < length:
+                self.textarea.insert("end", "\n")
 
     # Handles the saving of the current content of the textbox to an IOL file
     def save_text_to_file(self):
-        try:
-            # Get the list of text by line
-            current_text = self.textarea.get(1.0, "end").splitlines()
+        # Get the list of text by line
+        current_text = self.textarea.get(1.0, "end").splitlines()
 
-            is_file_new = False
+        is_file_new = False
 
-            # An empty file path means that the file was not saved yet
-            if self.path == "":
-                file_path = filedialog.asksaveasfilename(
-                    initialfile="test",
-                    initialdir=self.path,
-                    title="Save IOL file",
-                    filetypes=[("IOL File", ".iol")],
-                    defaultextension=".iol"
-                )
-
-                # Dialog was closed
-                if not file_path:
-                    raise EmptyFileReturnError(is_dialog_closed=True)
-
-                self.path = file_path
-                self.filename = str(file_path).split("/")[-1]
-                is_file_new = True
-
-            utils.write_to_file(self.path, current_text)
-
-            # Return path of file if a new file is created else return None
-            return self.filename if is_file_new else None
-
-        except EmptyFileReturnError:
-            raise
-
-    # Handles the saving of the current content of the textbox to a file
-    def save_text_to_file_as(self):
-        try:
-            # Get the list of text by line
-            current_text = self.textarea.get(1.0, "end").splitlines()
-
+        # An empty file path means that the file was not saved yet
+        if self.path == "":
             file_path = filedialog.asksaveasfilename(
                 initialfile="test",
                 initialdir=self.path,
-                title="Save file as...",
-                filetypes=[("IOL File", ".iol"), ("Any file", "*.*")],
+                title="Save IOL file",
+                filetypes=[("IOL File", ".iol")],
                 defaultextension=".iol"
             )
 
@@ -461,20 +437,42 @@ class CodeEditorTextBox(Frame):
 
             self.path = file_path
             self.filename = str(file_path).split("/")[-1]
+            is_file_new = True
 
-            utils.write_to_file(file_path, current_text)
+        utils.write_to_file(self.path, current_text)
 
-            # Return new filename
-            return self.filename
-        except EmptyFileReturnError:
-            raise
+        # Return path of file if a new file is created else return None
+        return self.filename if is_file_new else None
+
+    # Handles the saving of the current content of the textbox to a file
+    def save_text_to_file_as(self):
+        # Get the list of text by line
+        current_text = self.textarea.get(1.0, "end").splitlines()
+
+        file_path = filedialog.asksaveasfilename(
+            initialfile="test",
+            initialdir=self.path,
+            title="Save file as...",
+            filetypes=[("IOL File", ".iol"), ("Any file", "*.*")],
+            defaultextension=".iol"
+        )
+
+        # Dialog was closed
+        if not file_path:
+            raise EmptyFileReturnError(is_dialog_closed=True)
+
+        self.path = file_path
+        self.filename = str(file_path).split("/")[-1]
+
+        utils.write_to_file(file_path, current_text)
+
+        # Return new filename
+        return self.filename
 
     # Check and modify the content of the textbox to be compilable
     def get_compilable_text(self):
         # Get the list of text by line
         current_text = self.textarea.get(1.0, "end").splitlines()
-
-        print(current_text)
 
         # Check if the current text box is empty
         if current_text is None or current_text == [] or current_text == ['']:

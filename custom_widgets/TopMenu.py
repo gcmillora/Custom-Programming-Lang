@@ -30,4 +30,5 @@ class TopMenu(Menu):
         # Help menu commands
         help_menu = Menu(self, tearoff=0)
         help_menu.add_command(label="Show shortcuts", command=partial(open_shortcut_list, code_editor))
+        help_menu.add_command(label="Clear console", command=code_editor.states.clear_console)
         self.add_cascade(label="Help", menu=help_menu)

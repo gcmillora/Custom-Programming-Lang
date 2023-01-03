@@ -1,5 +1,5 @@
 from tkinter import filedialog, messagebox
-from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError
+from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError, TypeMismatchError
 from typing import Literal
 from compiler.processes import syntax_analysis
 
@@ -9,39 +9,35 @@ __FileTypes = Literal["iol", "prod", "ptbl"]
 # Open local files
 def open_file(file_type: __FileTypes | list[__FileTypes] | None,
               title: str = "Select File"):
-    try:
-        filetypes_to_ask = []
-        if file_type is None:
-            filetypes_to_ask.append(("All file types", "*.*"))
-        else:
-            if type(file_type) != list:
-                file_type = [file_type]
+    filetypes_to_ask = []
+    if file_type is None:
+        filetypes_to_ask.append(("All file types", "*.*"))
+    else:
+        if type(file_type) != list:
+            file_type = [file_type]
 
-            for curr_file_type in file_type:
-                if curr_file_type == "iol":
-                    filetypes_to_ask.append(("Integer-Oriented Language File", "*.iol"))
-                if curr_file_type == "prod":
-                    filetypes_to_ask.append(("Production File", "*.prod"))
-                if curr_file_type == "ptbl":
-                    filetypes_to_ask.append(("Parse Table File", "*.ptbl"))
+        for curr_file_type in file_type:
+            if curr_file_type == "iol":
+                filetypes_to_ask.append(("Integer-Oriented Language File", "*.iol"))
+            if curr_file_type == "prod":
+                filetypes_to_ask.append(("Production File", "*.prod"))
+            if curr_file_type == "ptbl":
+                filetypes_to_ask.append(("Parse Table File", "*.ptbl"))
 
-        # Open folder via filedialog
-        filename: filedialog = filedialog.askopenfilename(title=title,
-                                                          filetypes=(*filetypes_to_ask,))
+    # Open folder via filedialog
+    filename: filedialog = filedialog.askopenfilename(title=title,
+                                                      filetypes=(*filetypes_to_ask,))
 
-        # Dialog was closed
-        if not filename:
-            raise EmptyFileReturnError(is_dialog_closed=True)
+    # Dialog was closed
+    if not filename:
+        raise EmptyFileReturnError(is_dialog_closed=True)
 
-        # Open file and get the content inside
-        with open(f"{filename}", "r") as file:
-            try:
-                return file.read().splitlines(), filename
-            except IndexError:
-                raise
-
-    except EmptyFileReturnError:
-        raise
+    # Open file and get the content inside
+    with open(f"{filename}", "r") as file:
+        try:
+            return file.read().splitlines(), filename
+        except IndexError:
+            raise
 
 
 # Open MessageBox
@@ -94,7 +90,7 @@ def compile_file(lines: list[str]):
 def write_to_file(file_path, current_text):
     with open(file_path, "a+") as file:
         file.truncate(0)
-        file.writelines(f"{line} \n" for line in current_text)
+        file.writelines(f"{line}\n" for line in current_text)
 
 
 # Write tokens to tkn file
@@ -179,6 +175,16 @@ def get_shortcuts(get_all=True, get_ordered=False):
             "desc": "Compile the code on the code editor.",
             "key": "Ctrl + P",
         },
+        "Execute": {
+            "tk_key": "<Control-e>",
+            "desc": "Execute the compiled code.",
+            "key": "Ctrl + E",
+        },
+        "Compile and Execute": {
+            "tk_key": "<Control-Shift-p>",
+            "desc": "Compile and Execute the code on the code editor.",
+            "key": "Ctrl + Shift + P",
+        },
         "Show Tokenized Code": {
             "tk_key": "<Control-t>",
             "desc": "Show the tokenized code in a window.",
@@ -211,137 +217,126 @@ def get_shortcuts(get_all=True, get_ordered=False):
         return {**global_shortcuts, **local_shortcuts}
 
 
+def evaluate_expression(tokens, variables, ctr=0):
+    current_token = tokens[ctr]
+    if current_token.isdigit() or current_token in variables:
+        if current_token in variables:
+            return int(variables[current_token]), ctr
+        return int(current_token), ctr
+
+    if current_token in ["ADD", "MULT", "DIV", "SUB", "MOD"]:
+        ctr += 1
+        left, ctr = evaluate_expression(tokens, variables, ctr)
+        ctr += 1
+        right, ctr = evaluate_expression(tokens, variables, ctr)
+
+        if current_token == "ADD":
+            return left + right, ctr
+        elif current_token == "MULT":
+            return left * right, ctr
+        elif current_token == "DIV":
+            return left // right, ctr
+        elif current_token == "SUB":
+            return left - right, ctr
+        elif current_token == "MOD":
+            return left % right, ctr
+        return 0, ctr
 
 
-def evaluate_expression(tokens,variables, ctr=0,error=""):
-    try: 
-        current_token = tokens[ctr]
-        if(current_token.isdigit() or current_token in variables):
-            if(current_token in variables):
-                return int(variables[current_token]), ctr, error
-            return int(current_token), ctr, error
-
-        if(current_token in ["ADD","MULT","DIV","SUB","MOD"]):
+def exec_code(token_list, beg_user, parent):
+    output = ""
+    variables_runtime = {}
+    ctr = 0
+    operations = ["ADD", "MULT", "DIV", "SUB", "MOD"]
+    while ctr < len(token_list):
+        current_token = token_list[ctr]
+        if current_token[1] == "INT":
             ctr += 1
-            left, ctr,error = evaluate_expression(tokens,variables,ctr,error)
-            ctr += 1
-            right, ctr,error = evaluate_expression(tokens,variables,ctr,error)
-            
-            if(current_token == "ADD"):
-                return left + right, ctr,error
-            elif(current_token == "MULT"):
-                return left * right, ctr,error
-            elif(current_token == "DIV"):
-                return left // right, ctr,error
-            elif(current_token == "SUB"):
-                return left - right, ctr,error
-            elif(current_token == "MOD"):
-                return left % right, ctr,error
-            return 0, ctr
-    except ZeroDivisionError:
-        return 0, ctr, "ZeroDivisionError"
-
-
-
-def exec_code(token_list,beg_user,parent):
-    try:
-        variables_runtime = {}
-        output = ""
-        ctr = 0
-        while ctr < len(token_list):
-            current_token = token_list[ctr]
-            if current_token[1] == "INT":
-                ctr+=1
-                next_token = token_list[ctr]
-                if(token_list[ctr+1][1] == "IS"):
-                    next_of_next_token = token_list[ctr+2]
-                    if(next_of_next_token[1] == "INT_LIT"):
-                        variables_runtime[next_token[0]] = int(next_of_next_token[0])
-                    ctr += 3
-                else:
-                    variables_runtime[next_token[0]] = 0
-                    ctr+=1
-                    
-            elif current_token[1] == "STR":
-                next_token = token_list[ctr+1]
-                variables_runtime[next_token[0]] = ""
-                ctr += 2
-            elif current_token[1] == "NEWLN":
-                output += "\n"
+            next_token = token_list[ctr]
+            if token_list[ctr + 1][1] == "IS":
+                next_of_next_token = token_list[ctr + 2]
+                if next_of_next_token[1] == "INT_LIT":
+                    variables_runtime[next_token[0]] = int(next_of_next_token[0])
+                ctr += 3
+            else:
+                variables_runtime[next_token[0]] = 0
                 ctr += 1
-            elif current_token[1] == "PRINT":
-                ctr+=1
-                next_token = token_list[ctr]
-                if(next_token[1] == "IDENT"):
-                    output += str(variables_runtime[next_token[0]])
-                    ctr += 1
-                elif(next_token[1] == "ADD" or next_token[1] == "SUB" or next_token[1] == "MULT" or next_token[1] == "DIV" or next_token[1] == "MOD" or next_token[1] == "INT_LIT"):
-                    expression = []
-                    while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
-                        expression.append(token_list[ctr][0])
-                        ctr += 1
-                        if(ctr == len(token_list)):
-                            break
-                    result,_,err = evaluate_expression(expression, variables_runtime)
-                    if(err != ""):
-                        raise ZeroDivisionError
-                    output += str(result)
-                elif next_token[1] == "STR_LIT":
-                    output += next_token[0]
-                    ctr += 2
-            elif current_token[1] == "INTO":
-                ctr+=1
-                next_token = token_list[ctr]
-                if(next_token[1] == "IDENT"):
-                    ctr+=1
-                    next_next_token = token_list[ctr]
-                    if(next_next_token[1] == "IS"):
-                        ctr+=1
-                        if(token_list[ctr][1] == "INT_LIT"):
-                            variables_runtime[next_token[0]] = int(token_list[ctr][0])
-                            ctr+=1
-                        elif(token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]):
-                            expression = []
-                            while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
-                                expression.append(token_list[ctr][0])
-                    
-                                ctr += 1
-                                if(ctr == len(token_list)):
-                                    break
-                            result,_,err = evaluate_expression(expression, variables_runtime)
-                            if(err != ""):
-                                raise ZeroDivisionError
-                            variables_runtime[next_token[0]] = result
-            elif current_token[1] == "BEG":
-                ctr+=1
-                next_token = token_list[ctr]
-                if(next_token[1] == "IDENT"):
-                    inp = beg_user(parent)
-                    #check if ident is int or str
-                    if(next_token[0] in variables_runtime):
-                        if(type(variables_runtime[next_token[0]]) == int):
-                            if(inp.isdigit()):
-                                variables_runtime[next_token[0]] = int(inp)
-                            else:
-                                raise Exception("TypeMismatch")
-                        else:
-                            variables_runtime[next_token[0]] = inp
-                    ctr+=1
-            elif current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+
+        elif current_token[1] == "STR":
+            next_token = token_list[ctr + 1]
+            variables_runtime[next_token[0]] = ""
+            ctr += 2
+        elif current_token[1] == "NEWLN":
+            output += "\n"
+            ctr += 1
+        elif current_token[1] == "PRINT":
+            ctr += 1
+            next_token = token_list[ctr]
+            if next_token[1] == "IDENT":
+                output += str(variables_runtime[next_token[0]])
+                ctr += 1
+            elif next_token[1] in operations or next_token[1] == "INT_LIT":
                 expression = []
-                while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                while token_list[ctr][1] in operations or token_list[ctr][1] in \
+                        ["INT_LIT", "IDENT"]:
                     expression.append(token_list[ctr][0])
                     ctr += 1
-                    if(ctr == len(token_list)):
+                    if ctr == len(token_list):
                         break
-                result,_,err = evaluate_expression(expression, variables_runtime)
-                if(err != ""):
-                        raise ZeroDivisionError
-        return output,""    
-    except ZeroDivisionError:
-        return output,"Error: Division by zero"
-    except Exception as e:
-        return output, "Error: " + str(e)
-        
-    
-        
+                result, _ = evaluate_expression(expression, variables_runtime)
+                output += str(result)
+            elif next_token[1] == "STR_LIT":
+                output += next_token[0]
+                ctr += 2
+        elif current_token[1] == "INTO":
+            ctr += 1
+            next_token = token_list[ctr]
+            if next_token[1] == "IDENT":
+                ctr += 1
+                next_next_token = token_list[ctr]
+                if next_next_token[1] == "IS":
+                    ctr += 1
+                    if token_list[ctr][1] == "INT_LIT":
+                        variables_runtime[next_token[0]] = int(token_list[ctr][0])
+                        ctr += 1
+                    elif token_list[ctr][1] in operations:
+                        expression = []
+                        while token_list[ctr][1] in operations or \
+                                token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                            expression.append(token_list[ctr][0])
+
+                            ctr += 1
+                            if ctr == len(token_list):
+                                break
+                        result, _ = evaluate_expression(expression, variables_runtime)
+                        variables_runtime[next_token[0]] = result
+        elif current_token[1] == "BEG":
+            ctr += 1
+            next_token = token_list[ctr]
+            if next_token[1] == "IDENT":
+                while True:
+                    inp = beg_user(parent, f"Input value of {next_token[0]}:")
+                    if inp is None or inp == '' or inp == ['']:
+                        parent.states.console_display = print_to_console("Input cannot be empty.", "error")
+                        parent.bell()
+                        continue
+                    break
+
+                # check if ident is int or str
+                if next_token[0] in variables_runtime:
+                    if type(variables_runtime[next_token[0]]) == int:
+                        if inp.isdigit():
+                            inp = int(inp)
+                        else:
+                            raise TypeMismatchError()
+                    variables_runtime[next_token[0]] = inp
+                ctr += 1
+        elif current_token[1] in operations:
+            expression = []
+            while token_list[ctr][1] in operations or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                expression.append(token_list[ctr][0])
+                ctr += 1
+                if ctr == len(token_list):
+                    break
+            result, _ = evaluate_expression(expression, variables_runtime)
+    return output

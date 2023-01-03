@@ -41,6 +41,9 @@ class StateManager(Subject):
         # Intermediate variable that contains the values to be displayed in the console
         self.__console_display: str | list[str] | None = None
 
+        # Event to clear the console
+        self.__to_clear_console: bool = False
+
         # Temporary cache for the input value
         self.__user_input: str | None = None
 
@@ -70,6 +73,14 @@ class StateManager(Subject):
     @property
     def console_display(self):
         return self.__console_display
+
+    # Revert to console to cleared on GET
+    @property
+    def to_clear_console(self):
+        if self.__to_clear_console:
+            self.__to_clear_console = False
+            return True
+        return False
 
     # Clears the current cached value after fetching it
     @property
@@ -150,6 +161,14 @@ class StateManager(Subject):
 
         # Notifies observers for changes
         self.notify()
+
+    # Call to trigger to clear the console screen
+    def clear_console(self):
+        if not self.__to_clear_console:
+            self.__to_clear_console = True
+
+            # Notifies observers for changes
+            self.notify()
 
     # Update the current user input cache
     def __update_user_input(self, user_input):

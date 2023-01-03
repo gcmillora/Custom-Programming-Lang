@@ -205,7 +205,6 @@ class ParsingField(Frame):
             self.clear_table()
             for idx, line in enumerate(result):
                 line = line.split(",")
-                print(line)
                 # Set table insert options
                 options = {
                     "parent": "",

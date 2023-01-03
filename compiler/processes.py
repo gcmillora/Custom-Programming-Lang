@@ -206,7 +206,6 @@ def syntax_analysis(token_list):
                         exist = True
                         break
                 if not exist:
-                    print(token_list[ctr], "not in", valid_variables)
                     err_list.append(
                         f"At Line {next_token[2]}, {next_token[0]} is not defined")
                     continue
@@ -231,7 +230,6 @@ def syntax_analysis(token_list):
                         exist = True
                         break
                 if not exist:
-                    print(token_list[ctr], "not in", valid_variables)
                     err_list.append(
                         f"At Line {next_token[2]}, {next_token[0]} is not defined")
                     continue
@@ -252,7 +250,6 @@ def is_expr(token_list, ctr, err_list=[], valid_variables=[]):
         if current_token[1] == "IDENT":
             exist = False
             for var in valid_variables:
-                print(var)
                 if current_token[0] == var[0]:
                     exist = True
                     break

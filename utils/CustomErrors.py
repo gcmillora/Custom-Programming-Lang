@@ -47,4 +47,11 @@ class InvalidParseTableError(Exception):
 class ExecutionError(Exception):
     def __init__(self, filename: str, message="Unknown error during execution."):
         Exception.__init__(self)
-        self.message = f"Failed to execute {filename}, due to: '{message}'"
+        self.message = f"Failed to execute {filename}, due to '{message}'"
+
+
+# General errors on execution
+class TypeMismatchError(Exception):
+    def __init__(self):
+        Exception.__init__(self)
+        self.message = "Inputted value does not match the expected type."
