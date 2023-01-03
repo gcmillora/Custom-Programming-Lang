@@ -1,11 +1,16 @@
 
 
+
 lines = open("test.iol", "r").read().splitlines()
+print(lines)
 tokens = []
 variables = []
 
 keywords = ["ADD", "SUB", "MULT", "DIV", "MOD", "INTO",
-            "IS", "BEG", "PRINT", "INT", "STR", "DEFINE", "NEWLN"]
+            "IS", "BEG", "PRINT", "INT", "STR", "NEWLN"]
+
+operators = ["ADD", "SUB", "MULT", "DIV", "MOD"]
+
 
 for num in range(0, len(lines)):
     if lines[0] == "IOL" and lines[-1] == "LOI":
@@ -26,7 +31,7 @@ for num in range(0, len(lines)):
                     tokens.append((word, "ERR_LEX", num+1))
 
 errors = [i for i, v in enumerate(tokens) if v[1] == "ERR_LEX"]
-
+print(tokens)
 
 def syntax_analysis(token_list):
     err_list = []
@@ -43,34 +48,42 @@ def syntax_analysis(token_list):
             continue
         elif current_token[1] == "IS":
             previous_token = token_list[ctr-1]
-            if previous_token[1] == "IDENT":
-                next_token = token_list[ctr+1]
-                if next_token[1] == "IDENT":
-                    exist = False
-                    for var in valid_variables:
-                        if next_token[0] == var[0]:
-                            exist = True
-                            break
-                    if not exist:
-                        err_list.append(f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
-                        continue
-                ctr += 1
-                if next_token[1] not in ["INT_LIT", "IDENT"]:
-                    data = is_expr(token_list, ctr, err_list, valid_variables)
-                    ctr = data[1]
-                    err = data[0]
-                    err_list = data[2]
-                    if not err:
-                        err_list.append(f"ERROR: Invalid expression at line {token_list[ctr]}")
-                        continue
+            previous_of_previous_token = token_list[ctr-2] if ctr > 1 else None
+            if previous_of_previous_token[1] == "INT":
+                if previous_token[1] == "IDENT":
+                    next_token = token_list[ctr+1]
+                    if next_token[1] == "IDENT":
+                        exist = False
+                        for var in valid_variables:
+                            if next_token[0] == var[0]:
+                                exist = True
+                                break
+                        if not exist:
+                            err_list.append(f"ERROR: At Line {next_token[2]}, {next_token[0]} is not defined")
+                            continue
+                    ctr += 1
+                    if next_token[1] not in ["INT_LIT", "IDENT"]:
+                        data = is_expr(token_list, ctr, err_list, valid_variables)
+                        ctr = data[1]
+                        err = data[0]
+                        err_list = data[2]
+                        if not err:
+                            err_list.append(f"ERROR: Invalid expression at line {token_list[ctr]}")
+                            continue
 
-                if next_token[2] != current_token[2]:
-                    print(
-                        f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
-                    err_list.append(
-                        f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
+                    if next_token[2] != current_token[2]:
+                        print(
+                            f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
+                        err_list.append(
+                            f"ERROR: Line {next_token[2]} does not match line {current_token[2]}")
+                        continue
                     continue
+            elif previous_of_previous_token[1] == "STR":
+                #error if STR
+                err_list.append(
+                    f"ERROR: Line {previous_of_previous_token[2]}, assignment only reads INT")
                 continue
+                
         elif current_token[1] == "PRINT":
             next_token = token_list[ctr+1]
             ctr += 1
@@ -170,7 +183,137 @@ def is_expr(token_list, ctr, err_list=[], valid_variables=[]):
         return False, ctr, err_list
 
 
-print(syntax_analysis(tokens))
+def evaluate_expression(tokens,variables, ctr=0):
+    current_token = tokens[ctr]
+    if(current_token.isdigit() or current_token in variables):
+        if(current_token in variables):
+         return int(variables[current_token]), ctr
+        return int(current_token), ctr
+
+    if(current_token in ["ADD","MULT","DIV","SUB","MOD"]):
+        ctr += 1
+        left, ctr = evaluate_expression(tokens,variables,ctr)
+    
+        ctr += 1
+        right, ctr = evaluate_expression(tokens,variables,ctr)
+
+
+        if(current_token == "ADD"):
+         return left + right, ctr
+        elif(current_token == "MULT"):
+         return left * right, ctr
+        elif(current_token == "DIV"):
+         return left // right, ctr
+        elif(current_token == "SUB"):
+         return left - right, ctr
+        elif(current_token == "MOD"):
+         return left % right, ctr
+        return 0, ctr
+
+
+
+    
+            
+        
+            
+            
+def execute_code(token_list):
+    
+    variables_runtime = {}
+    output = ""
+    ctr = 0
+    try:
+        while ctr < len(token_list):
+            current_token = token_list[ctr]
+            if current_token[1] == "INT":
+                ctr+=1
+                next_token = token_list[ctr]
+                if(token_list[ctr+1]):
+                    next_of_next_token = token_list[ctr+2]
+                    if(next_of_next_token[1] == "INT_LIT"):
+                        variables_runtime[next_token[0]] = int(next_of_next_token[0])
+                    ctr += 3
+                else:
+                    variables_runtime[next_token[0]] = 0
+                    ctr += 2
+            elif current_token[1] == "STR":
+                next_token = token_list[ctr+1]
+                variables_runtime[next_token[0]] = ""
+                ctr += 2
+            elif current_token[1] == "NEWLN":
+                output += "\n"
+                ctr += 1
+            elif current_token[1] == "PRINT":
+                ctr+=1
+                next_token = token_list[ctr]
+                if(next_token[1] == "IDENT"):
+                    output += str(variables_runtime[next_token[0]])
+                    ctr += 2
+                elif(next_token[1] == "ADD" or next_token[1] == "SUB" or next_token[1] == "MULT" or next_token[1] == "DIV" or next_token[1] == "MOD" or next_token[1] == "INT_LIT"):
+                    expression = []
+                    while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                        expression.append(token_list[ctr][0])
+                        print("token"   ,token_list[ctr])
+                        ctr += 1
+                        if(ctr == len(token_list)):
+                            break
+                    result,_ = evaluate_expression(expression, variables_runtime)
+                    output += str(result)
+                elif next_token[1] == "STR_LIT":
+                    output += next_token[0]
+                    ctr += 2
+            elif current_token[1] == "INTO":
+                print("INTO")
+                ctr+=1
+                next_token = token_list[ctr]
+                if(next_token[1] == "IDENT"):
+                    ctr+=1
+                    next_next_token = token_list[ctr]
+                    if(next_next_token[1] == "IS"):
+                        ctr+=1
+                        if(token_list[ctr][1] == "INT_LIT"):
+                            variables_runtime[next_token[0]] = int(token_list[ctr][0])
+                            ctr+=1
+                        elif(token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]):
+                            expression = []
+                            while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                                expression.append(token_list[ctr][0])
+                                print("token"   ,token_list[ctr])
+                                ctr += 1
+                                if(ctr == len(token_list)):
+                                    break
+                            result,_ = evaluate_expression(expression, variables_runtime)
+                            variables_runtime[next_token[0]] = result
+                            print(result)
+            elif current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+                expression = []
+                while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                    expression.append(token_list[ctr][0])
+                    print("token"   ,token_list[ctr])
+                    ctr += 1
+                    if(ctr == len(token_list)):
+                        break
+                result,_ = evaluate_expression(expression, variables_runtime)
+                print(result)
+        return output        
+    except Exception as e:
+        if(str(e) == "ZeroDivisionError"):
+            return output,"Error: Division by zero"
+        
+        
+            
+            
+            
+            
+            
+            
+                
+            
+         
+syntax_analysis(tokens)
+print("executed code : ",execute_code(tokens)  )          
+
+
 
 
 for error in errors:

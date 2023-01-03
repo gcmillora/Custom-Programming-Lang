@@ -1,19 +1,5 @@
-IOL      
-INT num IS 0 INT res IS 0      
-INT num IS 4 INT b IS 69      
-STR msg1 STR msg2 STR msg3      
-BEG msg1 BEG msg2      
-BEG msg3      
-NEWLN PRINT msg1      
-NEWLN      
-INTO res IS MULT num num      
-PRINT msg2      
-PRINT MULT num 2      
-NEWLN      
-PRINT msg3      
-PRINT res      
-LOI      
-     
-   
-  
- 
+IOL
+INT x IS 8
+INTO x IS ADD x 10
+PRINT x
+LOI
