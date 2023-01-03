@@ -213,30 +213,33 @@ def get_shortcuts(get_all=True, get_ordered=False):
 
 
 
-def evaluate_expression(tokens,variables, ctr=0):
-    current_token = tokens[ctr]
-    if(current_token.isdigit() or current_token in variables):
-        if(current_token in variables):
-            return int(variables[current_token]), ctr
-        return int(current_token), ctr
+def evaluate_expression(tokens,variables, ctr=0,error=""):
+    try: 
+        current_token = tokens[ctr]
+        if(current_token.isdigit() or current_token in variables):
+            if(current_token in variables):
+                return int(variables[current_token]), ctr, error
+            return int(current_token), ctr, error
 
-    if(current_token in ["ADD","MULT","DIV","SUB","MOD"]):
-        ctr += 1
-        left, ctr = evaluate_expression(tokens,variables,ctr)
-        ctr += 1
-        right, ctr = evaluate_expression(tokens,variables,ctr)
-        
-        if(current_token == "ADD"):
-            return left + right, ctr
-        elif(current_token == "MULT"):
-         return left * right, ctr
-        elif(current_token == "DIV"):
-         return left // right, ctr
-        elif(current_token == "SUB"):
-            return left - right, ctr
-        elif(current_token == "MOD"):
-            return left % right, ctr
-        return 0, ctr
+        if(current_token in ["ADD","MULT","DIV","SUB","MOD"]):
+            ctr += 1
+            left, ctr,error = evaluate_expression(tokens,variables,ctr,error)
+            ctr += 1
+            right, ctr,error = evaluate_expression(tokens,variables,ctr,error)
+            
+            if(current_token == "ADD"):
+                return left + right, ctr
+            elif(current_token == "MULT"):
+                return left * right, ctr
+            elif(current_token == "DIV"):
+                return left // right, ctr
+            elif(current_token == "SUB"):
+                return left - right, ctr
+            elif(current_token == "MOD"):
+                return left % right, ctr
+            return 0, ctr
+    except ZeroDivisionError:
+        return 0, ctr, "ZeroDivisionError"
 
 
 
@@ -256,7 +259,6 @@ def exec_code(token_list,beg_user,parent):
                         variables_runtime[next_token[0]] = int(next_of_next_token[0])
                     ctr += 3
                 else:
-                  
                     variables_runtime[next_token[0]] = 0
                     ctr+=1
                     
@@ -277,17 +279,17 @@ def exec_code(token_list,beg_user,parent):
                     expression = []
                     while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
                         expression.append(token_list[ctr][0])
-                      
                         ctr += 1
                         if(ctr == len(token_list)):
                             break
-                    result,_ = evaluate_expression(expression, variables_runtime)
+                    result,_,err = evaluate_expression(expression, variables_runtime)
+                    if(err != ""):
+                        raise ZeroDivisionError
                     output += str(result)
                 elif next_token[1] == "STR_LIT":
                     output += next_token[0]
                     ctr += 2
             elif current_token[1] == "INTO":
-               
                 ctr+=1
                 next_token = token_list[ctr]
                 if(next_token[1] == "IDENT"):
@@ -306,7 +308,9 @@ def exec_code(token_list,beg_user,parent):
                                 ctr += 1
                                 if(ctr == len(token_list)):
                                     break
-                            result,_ = evaluate_expression(expression, variables_runtime)
+                            result,_,err = evaluate_expression(expression, variables_runtime)
+                            if(err != ""):
+                                raise ZeroDivisionError
                             variables_runtime[next_token[0]] = result
             elif current_token[1] == "BEG":
                 ctr+=1
@@ -330,16 +334,14 @@ def exec_code(token_list,beg_user,parent):
                     ctr += 1
                     if(ctr == len(token_list)):
                         break
-                result,_ = evaluate_expression(expression, variables_runtime)
+                result,_,err = evaluate_expression(expression, variables_runtime)
+                if(err != ""):
+                        raise ZeroDivisionError
         return output,""    
+    except ZeroDivisionError:
+        return output,"Error: Division by zero"
     except Exception as e:
-        #type mismatch
-        if(str(e) == "TypeMismatch"):
-            return output, "Error: Type Mismatch"
-        if(str(e)== "IndexError"):
-            return output, "Error: Unexpected EOF"
-        if(str(e)== "KeyError"):
-            return output, "Error: Variable not declared"
-        if(str(e)=="ZERO_DIVISION"):
-            return output, "Error: Division by zero"
+        return output, "Error: " + str(e)
+        
+    
         

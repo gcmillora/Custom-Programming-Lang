@@ -322,6 +322,7 @@ class CodeEditorNotebook(Notebook):
             token_list = utils.get_tokens_from_file(filename)
             output, error = (utils.exec_code(token_list, self.states.beg_user, self))
             print(output)
+            print(error)
 
             response = f"{current_textbox.filename} executed with no errors found."
             self.states.console_display = utils.print_to_console(response)
