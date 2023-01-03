@@ -228,15 +228,15 @@ def evaluate_expression(tokens,variables, ctr=0,error=""):
             right, ctr,error = evaluate_expression(tokens,variables,ctr,error)
             
             if(current_token == "ADD"):
-                return left + right, ctr
+                return left + right, ctr,error
             elif(current_token == "MULT"):
-                return left * right, ctr
+                return left * right, ctr,error
             elif(current_token == "DIV"):
-                return left // right, ctr
+                return left // right, ctr,error
             elif(current_token == "SUB"):
-                return left - right, ctr
+                return left - right, ctr,error
             elif(current_token == "MOD"):
-                return left % right, ctr
+                return left % right, ctr,error
             return 0, ctr
     except ZeroDivisionError:
         return 0, ctr, "ZeroDivisionError"
