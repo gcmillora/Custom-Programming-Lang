@@ -12,6 +12,4 @@ PRINT MULT num 2
 NEWLN           
 PRINT msg3           
 PRINT res           
-LOI           
-          
-   
+LOI
