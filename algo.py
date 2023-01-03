@@ -31,7 +31,7 @@ for num in range(0, len(lines)):
                     tokens.append((word, "ERR_LEX", num+1))
 
 errors = [i for i, v in enumerate(tokens) if v[1] == "ERR_LEX"]
-print(tokens)
+
 
 def syntax_analysis(token_list):
     err_list = []
@@ -218,12 +218,11 @@ def evaluate_expression(tokens,variables, ctr=0):
             
             
 def execute_code(token_list):
-    
-    variables_runtime = {}
-    output = ""
-    ctr = 0
-    try:
+        variables_runtime = {}
+        output = ""
+        ctr = 0
         while ctr < len(token_list):
+       
             current_token = token_list[ctr]
             if current_token[1] == "INT":
                 ctr+=1
@@ -248,7 +247,7 @@ def execute_code(token_list):
                 next_token = token_list[ctr]
                 if(next_token[1] == "IDENT"):
                     output += str(variables_runtime[next_token[0]])
-                    ctr += 2
+                    ctr += 1
                 elif(next_token[1] == "ADD" or next_token[1] == "SUB" or next_token[1] == "MULT" or next_token[1] == "DIV" or next_token[1] == "MOD" or next_token[1] == "INT_LIT"):
                     expression = []
                     while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
@@ -295,10 +294,8 @@ def execute_code(token_list):
                         break
                 result,_ = evaluate_expression(expression, variables_runtime)
                 print(result)
-        return output        
-    except Exception as e:
-        if(str(e) == "ZeroDivisionError"):
-            return output,"Error: Division by zero"
+        return output,""   
+  
         
         
             

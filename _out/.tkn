@@ -1,0 +1,4 @@
+INT,INT,2 
+x,IDENT,2 
+BEG,BEG,3 
+x,IDENT,3 

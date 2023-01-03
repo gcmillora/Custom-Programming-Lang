@@ -211,8 +211,135 @@ def get_shortcuts(get_all=True, get_ordered=False):
         return {**global_shortcuts, **local_shortcuts}
 
 
-def exec_code(token_list, beg_user, parent):
-    for line in token_list:
-        if line[1] == "BEG":
-            result = beg_user(parent, "LABEL")
-            print(result)
+
+
+def evaluate_expression(tokens,variables, ctr=0):
+    current_token = tokens[ctr]
+    if(current_token.isdigit() or current_token in variables):
+        if(current_token in variables):
+            return int(variables[current_token]), ctr
+        return int(current_token), ctr
+
+    if(current_token in ["ADD","MULT","DIV","SUB","MOD"]):
+        ctr += 1
+        left, ctr = evaluate_expression(tokens,variables,ctr)
+        ctr += 1
+        right, ctr = evaluate_expression(tokens,variables,ctr)
+        
+        if(current_token == "ADD"):
+            return left + right, ctr
+        elif(current_token == "MULT"):
+         return left * right, ctr
+        elif(current_token == "DIV"):
+         return left // right, ctr
+        elif(current_token == "SUB"):
+            return left - right, ctr
+        elif(current_token == "MOD"):
+            return left % right, ctr
+        return 0, ctr
+
+
+
+def exec_code(token_list,beg_user,parent):
+    try:
+        variables_runtime = {}
+        output = ""
+        ctr = 0
+        while ctr < len(token_list):
+            current_token = token_list[ctr]
+            if current_token[1] == "INT":
+                ctr+=1
+                next_token = token_list[ctr]
+                if(token_list[ctr+1][1] == "IS"):
+                    next_of_next_token = token_list[ctr+2]
+                    if(next_of_next_token[1] == "INT_LIT"):
+                        variables_runtime[next_token[0]] = int(next_of_next_token[0])
+                    ctr += 3
+                else:
+                  
+                    variables_runtime[next_token[0]] = 0
+                    ctr+=1
+                    
+            elif current_token[1] == "STR":
+                next_token = token_list[ctr+1]
+                variables_runtime[next_token[0]] = ""
+                ctr += 2
+            elif current_token[1] == "NEWLN":
+                output += "\n"
+                ctr += 1
+            elif current_token[1] == "PRINT":
+                ctr+=1
+                next_token = token_list[ctr]
+                if(next_token[1] == "IDENT"):
+                    output += str(variables_runtime[next_token[0]])
+                    ctr += 1
+                elif(next_token[1] == "ADD" or next_token[1] == "SUB" or next_token[1] == "MULT" or next_token[1] == "DIV" or next_token[1] == "MOD" or next_token[1] == "INT_LIT"):
+                    expression = []
+                    while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                        expression.append(token_list[ctr][0])
+                      
+                        ctr += 1
+                        if(ctr == len(token_list)):
+                            break
+                    result,_ = evaluate_expression(expression, variables_runtime)
+                    output += str(result)
+                elif next_token[1] == "STR_LIT":
+                    output += next_token[0]
+                    ctr += 2
+            elif current_token[1] == "INTO":
+               
+                ctr+=1
+                next_token = token_list[ctr]
+                if(next_token[1] == "IDENT"):
+                    ctr+=1
+                    next_next_token = token_list[ctr]
+                    if(next_next_token[1] == "IS"):
+                        ctr+=1
+                        if(token_list[ctr][1] == "INT_LIT"):
+                            variables_runtime[next_token[0]] = int(token_list[ctr][0])
+                            ctr+=1
+                        elif(token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]):
+                            expression = []
+                            while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                                expression.append(token_list[ctr][0])
+                    
+                                ctr += 1
+                                if(ctr == len(token_list)):
+                                    break
+                            result,_ = evaluate_expression(expression, variables_runtime)
+                            variables_runtime[next_token[0]] = result
+            elif current_token[1] == "BEG":
+                ctr+=1
+                next_token = token_list[ctr]
+                if(next_token[1] == "IDENT"):
+                    inp = beg_user(parent)
+                    #check if ident is int or str
+                    if(next_token[0] in variables_runtime):
+                        if(type(variables_runtime[next_token[0]]) == int):
+                            if(inp.isdigit()):
+                                variables_runtime[next_token[0]] = int(inp)
+                            else:
+                                raise Exception("TypeMismatch")
+                        else:
+                            variables_runtime[next_token[0]] = inp
+                    ctr+=1
+            elif current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+                expression = []
+                while token_list[ctr][1] in ["ADD", "SUB", "MULT", "DIV", "MOD"] or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
+                    expression.append(token_list[ctr][0])
+                    ctr += 1
+                    if(ctr == len(token_list)):
+                        break
+                result,_ = evaluate_expression(expression, variables_runtime)
+        return output,""    
+    except Exception as e:
+        #type mismatch
+        if(str(e) == "TypeMismatch"):
+            return output, "Error: Type Mismatch"
+        if(str(e)== "IndexError"):
+            return output, "Error: Unexpected EOF"
+        if(str(e)== "KeyError"):
+            return output, "Error: Variable not declared"
+        if(str(e)=="ZERO_DIVISION"):
+            return output, "Error: Division by zero"
+        
