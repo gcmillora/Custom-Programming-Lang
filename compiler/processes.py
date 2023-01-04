@@ -154,6 +154,9 @@ def syntax_analysis(token_list):
     for ctr in range(len(token_list)):
         current_token = token_list[ctr]
         if current_token[1] in ["INT", "STR"]:
+            if(ctr + 1) >= len(token_list):
+                err_list.append(f"Line {current_token[2]} is not an identifier")
+                continue
             next_token = token_list[ctr + 1]
             ctr += 1
             if next_token[1] != "IDENT":
@@ -164,6 +167,9 @@ def syntax_analysis(token_list):
         elif current_token[1] == "IS":
             previous_token = token_list[ctr - 1]
             if previous_token[1] == "IDENT":
+                if(ctr + 1) >= len(token_list):
+                    err_list.append(f"Line {current_token[2]} is not an identifier")
+                    continue
                 next_token = token_list[ctr + 1]
                 if next_token[1] == "IDENT":
                     exist = False
@@ -185,19 +191,20 @@ def syntax_analysis(token_list):
                         continue
 
                 if next_token[2] != current_token[2]:
-                    err_list.append(
-                        f"Line {next_token[2]} does not match line {current_token[2]}")
+                    err_list.append(f"Line {next_token[2]} does not match line {current_token[2]}")
                     continue
                 continue
         elif current_token[1] == "PRINT":
+            if(ctr + 1 >= len(token_list)):
+                err_list.append(f"Invalid statement at line {current_token[2]}")
+                continue
             next_token = token_list[ctr + 1]
             ctr += 1
             if next_token[1] not in ["IDENT", "INT_LIT"]:
                 err, ctr, err_list = is_expr_new(
                     token_list, ctr, err_list, valid_variables)
                 if not err:
-                    err_list.append(
-                        f"Invalid expression at line {token_list[ctr][2]}")
+                    err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
                     continue
             if next_token[1] == "IDENT":
                 exist = False
@@ -210,13 +217,15 @@ def syntax_analysis(token_list):
                         f"At Line {next_token[2]}, {next_token[0]} is not defined")
                     continue
             if next_token[2] != current_token[2]:
-                err_list.append(
-                    f"No next token at line {current_token[2]}")
+                err_list.append(f"No next token at line {current_token[2]}")
                 continue
             continue
         elif current_token[1] == "NEWLN":
             continue
         elif current_token[1] == "BEG":
+            if(ctr + 1) >= len(token_list):
+                err_list.append(f"Line {current_token[2]} is not an identifier")
+                continue
             next_token = token_list[ctr + 1]
             ctr += 1
             if next_token[1] != "IDENT":
@@ -270,4 +279,3 @@ def is_expr_new(token_list, ctr, err_list=[], valid_variables=[]):
     else:
         err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
         return False, ctr, err_list
-

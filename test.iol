@@ -6,7 +6,7 @@ BEG msg3
 NEWLN PRINT msg1
 NEWLN
 BEG num
-INTO res IS MULT num num
+INTO res IS MULT num ADD SUB 3 3 DIV 1 1
 PRINT msg2
 PRINT MULT num 2
 NEWLN
