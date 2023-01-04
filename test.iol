@@ -1,4 +1,6 @@
 IOL
 INT num IS 5
 PRINT MULT ADD num MULT num num 3
+INT x ADD 5 5
+PRINT x
 LOI

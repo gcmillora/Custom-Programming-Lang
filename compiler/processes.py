@@ -176,7 +176,7 @@ def syntax_analysis(token_list):
                         continue
                 ctr += 1
                 if next_token[1] not in ["INT_LIT", "IDENT"]:
-                    data = is_expr(token_list, ctr, err_list, valid_variables)
+                    data = is_expr_new(token_list, ctr, err_list, valid_variables)
                     ctr = data[1]
                     err = data[0]
                     err_list = data[2]
@@ -267,4 +267,7 @@ def is_expr_new(token_list, ctr, err_list=[], valid_variables=[]):
         else:
             err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
             return False, ctr, err_list
+    else:
+        err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
+        return False, ctr, err_list
 
