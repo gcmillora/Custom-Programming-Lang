@@ -1,5 +1,5 @@
 from tkinter import filedialog, messagebox
-from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError, NotCompatibleError, TypeMismatchError
+from utils.CustomErrors import EmptyFileReturnError, InvalidLexemeError, InvalidSyntaxError,TypeMismatchError
 from typing import Literal
 from compiler.processes import syntax_analysis
 
