@@ -181,7 +181,7 @@ def syntax_analysis(token_list):
                     err = data[0]
                     err_list = data[2]
                     if not err:
-                        err_list.append(f"Invalid expression at line {token_list[ctr]}")
+                        err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
                         continue
 
                 if next_token[2] != current_token[2]:
@@ -193,11 +193,11 @@ def syntax_analysis(token_list):
             next_token = token_list[ctr + 1]
             ctr += 1
             if next_token[1] not in ["IDENT", "INT_LIT"]:
-                err, ctr, err_list = is_expr(
+                err, ctr, err_list = is_expr_new(
                     token_list, ctr, err_list, valid_variables)
                 if not err:
                     err_list.append(
-                        f"Invalid expression at line {token_list[ctr]}")
+                        f"Invalid expression at line {token_list[ctr][2]}")
                     continue
             if next_token[1] == "IDENT":
                 exist = False
@@ -238,42 +238,33 @@ def syntax_analysis(token_list):
                     f"No next token at line {current_token[2]}")
                 continue
             continue
+        elif current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
+            err, ctr, err_list = is_expr_new(token_list, ctr, err_list, valid_variables)
+            if not err:
+                print("here")
+                err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
+                continue
+            continue
+    err_list = [*set(err_list)]
     return err_list
 
-
-def is_expr(token_list, ctr, err_list=[], valid_variables=[]):
+def is_expr_new(token_list, ctr, err_list=[], valid_variables=[]):
+    if(ctr >= len(token_list)):
+        err_list.append(f"Invalid expression at line {token_list[ctr-1][2]}")
+        return False, ctr-1, err_list
     current_token = token_list[ctr]
-    if current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
-        ctr += 1
-        return is_expr(token_list, ctr, err_list, valid_variables)
-    elif current_token[1] in ["INT_LIT", "IDENT"]:
-        if current_token[1] == "IDENT":
-            exist = False
-            for var in valid_variables:
-                if current_token[0] == var[0]:
-                    exist = True
-                    break
-            if not exist:
-                err_list.append(
-                    f"At Line {current_token[2]}, {current_token[0]} is not defined")
-                return False, ctr, err_list
-        next_token = token_list[ctr + 1]
-        ctr += 1
-        if next_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]:
-            ctr += 1
-            if next_token[2] != current_token[2]:
-                err_list.append(
-                    f"No next token at line {current_token[2]}")
-                return False, ctr, err_list
-            return is_expr(token_list, ctr, err_list, valid_variables)
-        elif next_token[1] in ["INT_LIT", "IDENT"]:
-            if next_token[2] != current_token[2]:
-                err_list.append(
-                    f"No next token at line {current_token[2]}")
-                return False, ctr, err_list
-            return True, ctr, err_list
+    if(current_token[1] in ["IDENT", "INT_LIT"]):
         return True, ctr, err_list
-    else:
-        err_list.append(
-            f"Invalid expression at line {current_token[2]}")
-        return False, ctr, err_list
+    if(current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]):
+        ctr += 1
+        left,ctr,err_list = is_expr_new(token_list, ctr, err_list, valid_variables)
+        ctr+=1
+        right,ctr,err_list = is_expr_new(token_list, ctr, err_list, valid_variables)
+        if(left and right):
+            return True, ctr, err_list
+        if(current_token[1] in ["ADD", "SUB", "MULT", "DIV", "MOD"]):
+            return True, ctr, err_list
+        else:
+            err_list.append(f"Invalid expression at line {token_list[ctr][2]}")
+            return False, ctr, err_list
+
