@@ -77,7 +77,7 @@ class Console(LabelFrame):
         else:
             # If the text is a list of strings then write them one by one to the text widget
             for line in text:
-                format_text = text.split("<>")
+                format_text = line.split("<>")
                 log_type = format_text[0]
                 user_text = ''.join(format_text[1:])
                 self.console_area.insert("end", f"{log_type}", log_type.lower())
