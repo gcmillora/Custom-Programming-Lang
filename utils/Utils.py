@@ -1,5 +1,6 @@
 from tkinter import filedialog, messagebox
-from utils.CustomErrors import EmptyFileReturnError, ExecutionError, InvalidLexemeError, InvalidSyntaxError,TypeMismatchError
+from utils.CustomErrors import EmptyFileReturnError, ExecutionError, InvalidLexemeError, InvalidSyntaxError, \
+    TypeMismatchError
 from typing import Literal
 from compiler.processes import syntax_analysis
 
@@ -147,11 +148,11 @@ def print_to_console(text: str | list[str], log_type: Literal["info", "error", "
         final_disp = []
         # Add log type to the start of every string to the status
         for line in text:
-            final_disp.append(f"{log_type}: {line}")
+            final_disp.append(f"{log_type}<>{line}")
         return final_disp
     else:
         # Add log type to the start of the string to the status
-        return f"{log_type}: {text}"
+        return f"{log_type}<>{text}"
 
 
 # Get tokenized code
@@ -277,19 +278,18 @@ def exec_code(token_list, beg_user, parent):
             elif next_token[1] in operations or next_token[1] == "INT_LIT":
                 expression = []
                 while token_list[ctr][1] in operations or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
-                    if(token_list[ctr][1] == "IDENT"):
-                        #check if str or int before appending
+                    if token_list[ctr][1] == "IDENT":
+                        # check if str or int before appending
                         if token_list[ctr][0] in variables_runtime:
-                            if(type(variables_runtime[token_list[ctr][0]]) == int):
+                            if type(variables_runtime[token_list[ctr][0]]) == int:
                                 expression.append(token_list[ctr][0])
                             else:
-                                raise TypeMismatchError()
+                                raise TypeMismatchError(expected_type="int", inputted_type="str")
                     elif token_list[ctr][1] == "INT_LIT" or token_list[ctr][1] in operations:
                         expression.append(token_list[ctr][0])
                     ctr += 1
                     if ctr == len(token_list):
                         break
-                print(expression)
                 result, _ = evaluate_expression(expression, variables_runtime)
                 output += str(result)
             elif next_token[1] == "STR_LIT":
@@ -309,14 +309,15 @@ def exec_code(token_list, beg_user, parent):
                     elif token_list[ctr][1] in operations:
                         expression = []
                         while token_list[ctr][1] in operations or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
-                            if(token_list[ctr][1] == "IDENT"):
-                                #check if str or int before appending
+                            if token_list[ctr][1] == "IDENT":
+                                # check if str or int before appending
                                 if token_list[ctr][0] in variables_runtime:
-                                    if(type(variables_runtime[token_list[ctr][0]]) == int):
+                                    if type(variables_runtime[token_list[ctr][0]]) == int:
                                         expression.append(token_list[ctr][0])
                                     else:
-                                        raise TypeMismatchError()
-                            else: expression.append(token_list[ctr][0])
+                                        raise TypeMismatchError(expected_type="int", inputted_type="str")
+                            else:
+                                expression.append(token_list[ctr][0])
                             ctr += 1
                             if ctr == len(token_list):
                                 break
@@ -340,24 +341,23 @@ def exec_code(token_list, beg_user, parent):
                         if inp.isdigit():
                             inp = int(inp)
                         else:
-                            raise TypeMismatchError()
+                            raise TypeMismatchError(expected_type="int", inputted_type="str")
                     variables_runtime[next_token[0]] = inp
                 ctr += 1
         elif current_token[1] in operations:
             expression = []
             while token_list[ctr][1] in operations or token_list[ctr][1] in ["INT_LIT", "IDENT"]:
-                if(token_list[ctr][1] == "IDENT"):
-                    #check if str or int before appending
-                        if token_list[ctr][0] in variables_runtime:
-                            if(type(variables_runtime[token_list[ctr][0]]) == int):
-                                expression.append(expression.append(token_list[ctr][0]))
-                            else:
-                                raise TypeMismatchError()
-                else :
+                if token_list[ctr][1] == "IDENT":
+                    # check if str or int before appending
+                    if token_list[ctr][0] in variables_runtime:
+                        if type(variables_runtime[token_list[ctr][0]]) == int:
+                            expression.append(expression.append(token_list[ctr][0]))
+                        else:
+                            raise TypeMismatchError(expected_type="int", inputted_type="str")
+                else:
                     expression.append(token_list[ctr][0])
                 ctr += 1
                 if ctr == len(token_list):
                     break
             result, _ = evaluate_expression(expression, variables_runtime)
-    print(output)
     return output

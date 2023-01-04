@@ -14,11 +14,9 @@ class Console(LabelFrame):
         LabelFrame.__init__(self,
                             master=parent,
                             text="Console",
-                            width=self._window_config[0],
-                            height=self._window_config[1],
                             background=self.color_config["alt_bg"],
                             foreground=self.color_config["fg"])
-        self.grid(column=0, row=1, sticky="ns")
+        self.grid(column=0, row=1, sticky="nsew")
         self.grid_propagate(False)  # Locks the size of the frame to set width and height
         self.update_idletasks()  # Make sure the info about the frame is updated
 
@@ -71,16 +69,19 @@ class Console(LabelFrame):
         if type(text) is str:
             # Check if the text to be display is an error or info
             # If it is an error change the text color to red
-            format_text = text.split(":")
+            format_text = text.split("<>")
             log_type = format_text[0]
-            user_text = format_text[1]
+            user_text = ''.join(format_text[1:])
             self.console_area.insert("end", f"{log_type}", log_type.lower())
-            self.console_area.insert("end", f":{user_text}\n")
+            self.console_area.insert("end", f": {user_text}\n")
         else:
             # If the text is a list of strings then write them one by one to the text widget
             for line in text:
-                log_type = line.split(":")[0].lower()
-                self.console_area.insert("end", f"{line}\n", log_type)
+                format_text = text.split("<>")
+                log_type = format_text[0]
+                user_text = ''.join(format_text[1:])
+                self.console_area.insert("end", f"{log_type}", log_type.lower())
+                self.console_area.insert("end", f": {user_text}\n")
 
         # Return the state to disabled to disallow the user to modify the console log
         self.console_area.config(state="disabled")

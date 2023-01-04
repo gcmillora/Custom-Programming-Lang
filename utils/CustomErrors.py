@@ -52,6 +52,10 @@ class ExecutionError(Exception):
 
 # General errors on execution
 class TypeMismatchError(Exception):
-    def __init__(self):
+    def __init__(self, expected_type: str | None = None, inputted_type: str | None = None):
         Exception.__init__(self)
-        self.message = "Inputted value does not match the expected type."
+        message = "Inputted value does not match the expected type."
+        if expected_type is not None and inputted_type is not None:
+            message = f"Expected operand is of type [{expected_type}], type [{inputted_type}] was received instead."
+
+        self.message = message
