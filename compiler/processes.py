@@ -165,6 +165,9 @@ def syntax_analysis(token_list):
             valid_variables.append(next_token)
             continue
         elif current_token[1] == "IS":
+            if(ctr-1 < 0):
+                err_list.append(f"Invalid syntax at line {current_token[2]}, [IDENT] IS [IDENT] is expected")
+                continue
             previous_token = token_list[ctr - 1]
             if previous_token[1] == "IDENT":
                 if(ctr + 1) >= len(token_list):

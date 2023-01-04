@@ -56,6 +56,6 @@ class TypeMismatchError(Exception):
         Exception.__init__(self)
         message = "Inputted value does not match the expected type."
         if expected_type is not None and inputted_type is not None:
-            message = f"Expected operand is of type [{expected_type}], type [{inputted_type}] was received instead."
+            message = f"Expected value is of type [{expected_type}], type [{inputted_type}] was received instead."
 
         self.message = message
